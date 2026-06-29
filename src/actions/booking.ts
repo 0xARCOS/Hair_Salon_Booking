@@ -7,7 +7,14 @@ import { addMinutes, parseISO, startOfDay, endOfDay } from "date-fns";
 import type { AppointmentStatus } from "@/types/database";
 
 const BUSINESS_START_HOUR = 9;
-const BUSINESS_END_HOUR = 18;
+
+// Hora de cierre por día de la semana (0 = domingo … 6 = sábado).
+// L–V 9:00–20:00, sábado 9:00–14:00, domingo cerrado.
+function closingHour(day: number): number | null {
+  if (day === 0) return null; // domingo cerrado
+  if (day === 6) return 14; // sábado
+  return 20; // lunes a viernes
+}
 
 export async function getAvailableSlots(
   date: string,
@@ -15,8 +22,12 @@ export async function getAvailableSlots(
 ): Promise<string[]> {
   const supabase = await createClient();
 
-  const dayStart = startOfDay(parseISO(date));
-  const dayEnd = endOfDay(parseISO(date));
+  const parsedDate = parseISO(date);
+  const endHour = closingHour(parsedDate.getDay());
+  if (endHour === null) return []; // día cerrado
+
+  const dayStart = startOfDay(parsedDate);
+  const dayEnd = endOfDay(parsedDate);
 
   const { data: appointments, error } = await supabase
     .from("appointments")
@@ -38,7 +49,7 @@ export async function getAvailableSlots(
   const businessStart = new Date(dayStart);
   businessStart.setHours(BUSINESS_START_HOUR, 0, 0, 0);
   const businessEnd = new Date(dayStart);
-  businessEnd.setHours(BUSINESS_END_HOUR, 0, 0, 0);
+  businessEnd.setHours(endHour, 0, 0, 0);
 
   let cursor = businessStart;
   while (addMinutes(cursor, duration_mins) <= businessEnd) {
@@ -109,13 +120,100 @@ export async function updateAppointmentStatus(
   const role = await getUserRole(supabase);
   if (role !== "staff") throw new Error("No autorizado.");
 
-  const { error } = await supabase
-    .from("appointments")
-    .update({ status })
-    .eq("id", id);
-  if (error) throw new Error(error.message);
+  if (status === "completed") {
+    // Usa la función que, además de marcar la cita como completada,
+    // actualiza el total gastado del cliente en el CRM.
+    const { error } = await supabase.rpc("complete_appointment", {
+      appointment_id: id,
+    });
+    if (error) throw new Error(error.message);
+  } else {
+    const { error } = await supabase
+      .from("appointments")
+      .update({ status })
+      .eq("id", id);
+    if (error) throw new Error(error.message);
+  }
 
   revalidatePath("/admin");
+}
+
+export type GuestBookingState = { error: string | null; ok: boolean };
+
+// Reserva sin registro (modelo híbrido): el cliente solicita cita con
+// nombre + teléfono. Si hay sesión iniciada, se vincula a su cuenta.
+// La cita entra como 'pending' y el salón la confirma desde el panel.
+export async function createGuestAppointment(
+  _prevState: GuestBookingState,
+  formData: FormData
+): Promise<GuestBookingState> {
+  const supabase = await createClient();
+
+  const name = (formData.get("name") as string | null)?.trim() ?? "";
+  const phone = (formData.get("phone") as string | null)?.trim() ?? "";
+  const serviceValue = (formData.get("service_id") as string | null) ?? "";
+  const date = (formData.get("date") as string | null) ?? "";
+  const time = (formData.get("time") as string | null) ?? "";
+  const message = (formData.get("message") as string | null)?.trim() ?? "";
+
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    return {
+      error: "Las reservas no están disponibles en el modo previsualización.",
+      ok: false,
+    };
+  }
+
+  if (!name || !phone) {
+    return { error: "Indica tu nombre y teléfono.", ok: false };
+  }
+  if (!date || !time) {
+    return { error: "Elige una fecha y una hora.", ok: false };
+  }
+
+  const start = parseISO(`${date}T${time}`);
+  if (isNaN(start.getTime())) {
+    return { error: "Fecha u hora no válidas.", ok: false };
+  }
+  if (start.getTime() < Date.now()) {
+    return { error: "Elige una fecha y hora futuras.", ok: false };
+  }
+  if (closingHour(start.getDay()) === null) {
+    return { error: "Los domingos permanecemos cerrados.", ok: false };
+  }
+
+  // Servicio: si se eligió uno del catálogo, lo vinculamos; "Otro" queda
+  // como solicitud sin servicio concreto y se anota en el mensaje.
+  let serviceId: string | null = null;
+  let serviceNote = "";
+  if (serviceValue && serviceValue !== "other") {
+    const { data: service } = await supabase
+      .from("services")
+      .select("id")
+      .eq("id", serviceValue)
+      .single();
+    if (service) serviceId = service.id;
+  } else if (serviceValue === "other") {
+    serviceNote = "Servicio: a consultar. ";
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { error } = await supabase.from("appointments").insert({
+    client_id: user?.id ?? null,
+    service_id: serviceId,
+    start_time: start.toISOString(),
+    status: "pending",
+    guest_name: name,
+    guest_phone: phone,
+    notes: (serviceNote + message).trim() || null,
+  });
+
+  if (error) return { error: error.message, ok: false };
+
+  revalidatePath("/admin");
+  return { error: null, ok: true };
 }
 
 export type ServiceState = { error: string | null };

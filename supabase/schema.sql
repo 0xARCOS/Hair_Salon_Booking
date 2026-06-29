@@ -31,6 +31,11 @@ CREATE TABLE public.appointments (
     start_time TIMESTAMPTZ NOT NULL,
     status appointment_status DEFAULT 'pending',
     gcal_event_id TEXT,
+    -- Datos de contacto para reservas sin registro (modelo híbrido)
+    guest_name TEXT,
+    guest_phone TEXT,
+    guest_email TEXT,
+    notes TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -117,6 +122,14 @@ CREATE POLICY "Users can view own appointments" ON public.appointments FOR SELEC
 CREATE POLICY "Users can insert own appointments" ON public.appointments FOR INSERT WITH CHECK (auth.uid() = client_id);
 CREATE POLICY "Staff can view all appointments" ON public.appointments FOR SELECT USING (public.is_staff());
 CREATE POLICY "Staff can update all appointments" ON public.appointments FOR UPDATE USING (public.is_staff());
+-- Reservas sin registro: cualquiera puede solicitar una cita de invitado (pendiente)
+CREATE POLICY "Anyone can request a guest appointment" ON public.appointments FOR INSERT
+  WITH CHECK (
+    client_id IS NULL
+    AND status = 'pending'
+    AND guest_name IS NOT NULL
+    AND guest_phone IS NOT NULL
+  );
 
 -- Client_CRM Policies
 CREATE POLICY "Staff can view all CRM records" ON public.client_crm FOR SELECT USING (public.is_staff());

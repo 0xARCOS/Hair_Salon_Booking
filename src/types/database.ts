@@ -19,11 +19,15 @@ export interface Service {
 
 export interface Appointment {
   id: string;
-  client_id: string;
-  service_id: string;
+  client_id: string | null;
+  service_id: string | null;
   start_time: string;
   status: AppointmentStatus;
   gcal_event_id: string | null;
+  guest_name: string | null;
+  guest_phone: string | null;
+  guest_email: string | null;
+  notes: string | null;
   created_at: string;
   services?: Pick<Service, "name" | "price" | "duration_mins"> | null;
   profiles?: Pick<Profile, "full_name" | "phone"> | null;

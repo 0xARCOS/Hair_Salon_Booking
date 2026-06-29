@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
 import type { Service } from "@/types/database";
-import { BookingWizard } from "@/components/booking/BookingWizard";
+import { GuestBookingForm } from "@/components/landing/GuestBookingForm";
 import "@/app/landing.css";
 
 interface LandingClientProps {
@@ -172,31 +172,6 @@ export function LandingClient({ services, user }: LandingClientProps) {
     };
   }, []);
 
-  const heroLabel = (
-    <>
-      Reservar cita
-      <svg
-        width="14"
-        height="14"
-        viewBox="0 0 14 14"
-        stroke="currentColor"
-        strokeWidth="2"
-        fill="none"
-      >
-        <path d="M2 7h10M8 3l4 4-4 4" />
-      </svg>
-    </>
-  );
-
-  const formLabel = (
-    <>
-      Solicitar cita
-      <svg viewBox="0 0 16 16">
-        <path d="M2 8h12M9 4l4 4-4 4" />
-      </svg>
-    </>
-  );
-
   return (
     <div className="landing">
       {/* Cursor */}
@@ -219,12 +194,7 @@ export function LandingClient({ services, user }: LandingClientProps) {
             </Link>
           </li>
           <li>
-            <BookingWizard
-              services={services}
-              user={user}
-              triggerClassName="nav-cta"
-              triggerLabel="Reservar cita"
-            />
+            <a href="#reserva" className="nav-cta">Reservar cita</a>
           </li>
         </ul>
         <button className="hamburger" id="hamburger" aria-label="Abrir menú">
@@ -248,12 +218,19 @@ export function LandingClient({ services, user }: LandingClientProps) {
             mereces.
           </p>
           <div className="hero-actions">
-            <BookingWizard
-              services={services}
-              user={user}
-              triggerClassName="btn-dark"
-              triggerLabel={heroLabel}
-            />
+            <a href="#reserva" className="btn-dark">
+              Reservar cita
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 14 14"
+                stroke="currentColor"
+                strokeWidth="2"
+                fill="none"
+              >
+                <path d="M2 7h10M8 3l4 4-4 4" />
+              </svg>
+            </a>
             <a href="#servicios" className="btn-ghost">Ver servicios</a>
           </div>
           <div className="hero-stats">
@@ -668,77 +645,14 @@ export function LandingClient({ services, user }: LandingClientProps) {
           </div>
         </div>
 
-        <div className="booking-form-wrap reveal reveal-delay-2" id="reserva">
-          <div className="booking-form-title">Reservar cita</div>
-          <div className="booking-form-sub">
-            Te confirmamos disponibilidad en menos de 24h
-          </div>
-
-          <div className="field-row">
-            <div className="field">
-              <input type="text" id="fname" placeholder=" " />
-              <label htmlFor="fname">Nombre</label>
-            </div>
-            <div className="field">
-              <input type="tel" id="fphone" placeholder=" " />
-              <label htmlFor="fphone">Teléfono</label>
-            </div>
-          </div>
-
-          <div className="field">
-            <select id="fservice" defaultValue="">
-              <option value="" disabled></option>
-              <option>Corte de cabello</option>
-              <option>Color y mechas</option>
-              <option>Balayage</option>
-              <option>Tratamiento capilar</option>
-              <option>Peinado o recogido</option>
-              <option>Barba y afeitado</option>
-              <option>Estética facial</option>
-              <option>Otro</option>
-            </select>
-            <label htmlFor="fservice">Servicio</label>
-          </div>
-
-          <div className="field-row">
-            <div className="field">
-              <input type="date" id="fdate" placeholder=" " />
-              <label htmlFor="fdate">Fecha</label>
-            </div>
-            <div className="field">
-              <select id="ftime" defaultValue="">
-                <option value="">Hora preferida</option>
-                {[
-                  "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
-                  "12:00", "12:30", "13:00", "15:00", "15:30", "16:00",
-                  "16:30", "17:00", "17:30", "18:00", "18:30", "19:00",
-                ].map((t) => (
-                  <option key={t}>{t}</option>
-                ))}
-              </select>
-              <label htmlFor="ftime">Hora</label>
-            </div>
-          </div>
-
-          <div className="field">
-            <textarea id="fmsg" placeholder=" " />
-            <label htmlFor="fmsg">Mensaje (opcional)</label>
-          </div>
-
-          <BookingWizard
-            services={services}
-            user={user}
-            triggerClassName="btn-submit"
-            triggerLabel={formLabel}
-          />
-        </div>
+        <GuestBookingForm services={services} user={user} />
       </section>
 
       {/* MAP */}
       <div className="map-wrap">
         <div className="map-pill">Salón Irene Rodríguez · Guadalajara</div>
         <iframe
-          src="https://www.google.com/maps?q=Guadalajara,Espa%C3%B1a&output=embed"
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3032!2d-3.1580604!3d40.6370101!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xd43ab182c2218ab%3A0xce689ce442787ae6!2zU2Fsw7NuIGRlIGJlbGxlemEgdW5pc2V4IElyZW5lIFJvZHJpZ3Vleg!5e0!3m2!1ses!2ses!4v1719219600000!5m2!1ses!2ses"
           allowFullScreen
           loading="lazy"
           referrerPolicy="no-referrer-when-downgrade"
