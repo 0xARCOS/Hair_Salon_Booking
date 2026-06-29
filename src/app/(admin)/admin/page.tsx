@@ -90,12 +90,26 @@ export default async function AdminPage() {
                       className="border-b border-border last:border-0 hover:bg-secondary/20"
                     >
                       <td className="px-4 py-3">
-                        <p className="font-medium">{appt.profiles?.full_name ?? "—"}</p>
+                        <p className="font-medium flex items-center gap-2">
+                          {appt.guest_name ?? appt.profiles?.full_name ?? "—"}
+                          {!appt.client_id && (
+                            <span className="text-[10px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
+                              Invitado
+                            </span>
+                          )}
+                        </p>
                         <p className="text-xs text-muted-foreground">
-                          {appt.profiles?.phone ?? ""}
+                          {appt.guest_phone ?? appt.profiles?.phone ?? ""}
                         </p>
                       </td>
-                      <td className="px-4 py-3">{appt.services?.name ?? "—"}</td>
+                      <td className="px-4 py-3">
+                        {appt.services?.name ?? "A consultar"}
+                        {appt.notes && (
+                          <p className="text-xs text-muted-foreground mt-0.5 max-w-[220px] truncate" title={appt.notes}>
+                            {appt.notes}
+                          </p>
+                        )}
+                      </td>
                       <td className="px-4 py-3 text-muted-foreground">
                         {format(parseISO(appt.start_time), "d MMM yyyy · HH:mm", {
                           locale: es,

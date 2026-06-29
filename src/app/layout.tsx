@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Plus_Jakarta_Sans, Outfit, Cormorant_Garamond } from "next/font/google";
 import "./globals.css";
 
 const fontSans = Plus_Jakarta_Sans({
@@ -7,9 +7,24 @@ const fontSans = Plus_Jakarta_Sans({
   variable: "--font-sans",
 });
 
+// Fuentes de la identidad del salón (usadas en la landing)
+const fontBody = Outfit({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600"],
+  variable: "--font-body",
+});
+
+const fontDisplay = Cormorant_Garamond({
+  subsets: ["latin"],
+  weight: ["300", "400", "600"],
+  style: ["normal", "italic"],
+  variable: "--font-display",
+});
+
 export const metadata: Metadata = {
-  title: "Irene Hair Salon | Guadalajara",
-  description: "Peluquería premium en Guadalajara. Reserva tu cita online.",
+  title: "Irene Rodríguez · Salón de Belleza Unisex · Guadalajara",
+  description:
+    "Salón de belleza unisex en Guadalajara. Cortes, color, tratamientos y estética con más de 10 años de experiencia. Reserva tu cita online.",
 };
 
 export default function RootLayout({
@@ -19,7 +34,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={`${fontSans.variable} font-sans antialiased min-h-screen`}>
+      <body
+        className={`${fontSans.variable} ${fontBody.variable} ${fontDisplay.variable} font-sans antialiased min-h-screen`}
+      >
         {children}
       </body>
     </html>

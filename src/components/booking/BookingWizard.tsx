@@ -13,11 +13,23 @@ import { Calendar } from "@/components/ui/calendar";
 interface BookingWizardProps {
   services: Service[];
   user: User | null;
+  /** Clase CSS del botón/enlace que abre el asistente. */
+  triggerClassName?: string;
+  /** Contenido del botón/enlace (texto, iconos, etc.). */
+  triggerLabel?: React.ReactNode;
 }
+
+const DEFAULT_TRIGGER_CLASS =
+  "inline-flex items-center justify-center px-8 py-3 rounded-full bg-gradient-to-r from-primary to-amber-500 text-primary-foreground font-semibold hover:opacity-90 transition-all hover:scale-105 shadow-lg shadow-primary/20";
 
 type Step = "service" | "date" | "time" | "confirm" | "success";
 
-export function BookingWizard({ services, user }: BookingWizardProps) {
+export function BookingWizard({
+  services,
+  user,
+  triggerClassName = DEFAULT_TRIGGER_CLASS,
+  triggerLabel = "Reservar cita",
+}: BookingWizardProps) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<Step>("service");
   const [selectedService, setSelectedService] = useState<Service | null>(null);
@@ -89,22 +101,16 @@ export function BookingWizard({ services, user }: BookingWizardProps) {
 
   if (!user) {
     return (
-      <Link
-        href="/login"
-        className="inline-flex items-center justify-center px-8 py-3 rounded-full bg-gradient-to-r from-primary to-amber-500 text-primary-foreground font-semibold hover:opacity-90 transition-all hover:scale-105 shadow-lg shadow-primary/20"
-      >
-        Reservar cita
+      <Link href="/login" className={triggerClassName}>
+        {triggerLabel}
       </Link>
     );
   }
 
   return (
     <>
-      <button
-        onClick={handleOpen}
-        className="inline-flex items-center justify-center px-8 py-3 rounded-full bg-gradient-to-r from-primary to-amber-500 text-primary-foreground font-semibold hover:opacity-90 transition-all hover:scale-105 shadow-lg shadow-primary/20"
-      >
-        Reservar cita
+      <button type="button" onClick={handleOpen} className={triggerClassName}>
+        {triggerLabel}
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
