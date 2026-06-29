@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getUserRole } from "@/lib/queries";
-import { addMinutes, parseISO, startOfDay, endOfDay } from "date-fns";
+import { addMinutes, parseISO, startOfDay, endOfDay, format } from "date-fns";
+import { es } from "date-fns/locale";
 import type { AppointmentStatus } from "@/types/database";
 
 const BUSINESS_START_HOUR = 9;
@@ -184,14 +185,18 @@ export async function createGuestAppointment(
   // Servicio: si se eligió uno del catálogo, lo vinculamos; "Otro" queda
   // como solicitud sin servicio concreto y se anota en el mensaje.
   let serviceId: string | null = null;
+  let serviceName = "A consultar";
   let serviceNote = "";
   if (serviceValue && serviceValue !== "other") {
     const { data: service } = await supabase
       .from("services")
-      .select("id")
+      .select("id, name")
       .eq("id", serviceValue)
       .single();
-    if (service) serviceId = service.id;
+    if (service) {
+      serviceId = service.id;
+      serviceName = service.name;
+    }
   } else if (serviceValue === "other") {
     serviceNote = "Servicio: a consultar. ";
   }
@@ -212,8 +217,73 @@ export async function createGuestAppointment(
 
   if (error) return { error: error.message, ok: false };
 
+  // Aviso al salón por email (no bloquea la reserva si falla).
+  await notifySalonByEmail({
+    name,
+    phone,
+    serviceName,
+    start,
+    message,
+  });
+
   revalidatePath("/admin");
   return { error: null, ok: true };
+}
+
+// Envía un email de aviso al salón cuando entra una nueva solicitud.
+// Usa Resend (plan gratuito). Si faltan las variables de entorno, no hace
+// nada: las reservas siguen funcionando, solo no se manda el aviso.
+async function notifySalonByEmail(data: {
+  name: string;
+  phone: string;
+  serviceName: string;
+  start: Date;
+  message: string;
+}): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY;
+  const to = process.env.SALON_NOTIFICATION_EMAIL;
+  if (!apiKey || !to) return;
+
+  const from = process.env.RESEND_FROM ?? "Reservas Irene <onboarding@resend.dev>";
+  const when = format(data.start, "EEEE d 'de' MMMM yyyy 'a las' HH:mm", {
+    locale: es,
+  });
+
+  const html = `
+    <h2>Nueva solicitud de cita</h2>
+    <p><strong>Cliente:</strong> ${escapeHtml(data.name)}</p>
+    <p><strong>Teléfono:</strong> ${escapeHtml(data.phone)}</p>
+    <p><strong>Servicio:</strong> ${escapeHtml(data.serviceName)}</p>
+    <p><strong>Fecha solicitada:</strong> ${escapeHtml(when)}</p>
+    ${data.message ? `<p><strong>Mensaje:</strong> ${escapeHtml(data.message)}</p>` : ""}
+    <p>Confírmala desde el panel de administración.</p>
+  `;
+
+  try {
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from,
+        to,
+        subject: `Nueva cita: ${data.name} · ${data.serviceName}`,
+        html,
+      }),
+    });
+  } catch {
+    // Silencioso: el aviso es secundario, la cita ya está registrada.
+  }
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 export type ServiceState = { error: string | null };
