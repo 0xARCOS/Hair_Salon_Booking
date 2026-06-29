@@ -13,5 +13,6 @@ npm-debug.log*
 .env.production.local
 
 .vercel
+.netlify
 *.tsbuildinfo
 next-env.d.ts
