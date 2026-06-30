@@ -26,7 +26,7 @@ export function PushNotificationToggle() {
       } else {
         setMessage({ text: "Notificaciones activadas correctamente.", error: false });
       }
-    } catch (err) {
+    } catch {
       setMessage({ text: "Error al activar notificaciones.", error: true });
     } finally {
       setIsSubscribing(false);

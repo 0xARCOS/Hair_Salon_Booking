@@ -6,7 +6,8 @@ import { getUserRole } from "@/lib/queries";
 import { addMinutes, parseISO, startOfDay, endOfDay, format } from "date-fns";
 import { es } from "date-fns/locale";
 import type { AppointmentStatus } from "@/types/database";
-import { adminMessaging } from "@/lib/firebase/server";
+import { getAdminMessaging } from "@/lib/firebase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 const BUSINESS_START_HOUR = 9;
 
@@ -307,18 +308,21 @@ async function notifyStaffByPush(data: {
   start: Date;
 }) {
   try {
-    const supabase = await createClient();
-    // Get all staff push tokens
-    const { data: tokens } = await supabase
-      .from("push_tokens")
-      .select("fcm_token");
-    
+    const messaging = getAdminMessaging();
+    if (!messaging) return; // Firebase no configurado: se omite el push
+
+    // Los tokens del staff solo son legibles con service-role (las RLS
+    // restringen a "tokens propios"; quien reserva no es staff).
+    const admin = createAdminClient();
+    if (!admin) return; // sin service-role no podemos leer los tokens
+
+    const { data: tokens } = await admin.from("push_tokens").select("fcm_token");
     if (!tokens || tokens.length === 0) return;
-    
-    const tokenStrings = tokens.map(t => t.fcm_token);
+
+    const tokenStrings = tokens.map((t) => t.fcm_token);
     const when = format(data.start, "EEEE d 'de' MMMM 'a las' HH:mm", { locale: es });
 
-    await adminMessaging.sendEachForMulticast({
+    await messaging.sendEachForMulticast({
       tokens: tokenStrings,
       notification: {
         title: "Nueva Cita Reservada",

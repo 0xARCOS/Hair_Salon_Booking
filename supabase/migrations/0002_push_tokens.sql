@@ -20,6 +20,13 @@ CREATE POLICY "Users can insert own push tokens"
     FOR INSERT
     WITH CHECK (auth.uid() = user_id);
 
+-- Allow users to update their own tokens (necesario para el upsert onConflict)
+CREATE POLICY "Users can update own push tokens"
+    ON public.push_tokens
+    FOR UPDATE
+    USING (auth.uid() = user_id)
+    WITH CHECK (auth.uid() = user_id);
+
 -- Allow users to delete their own tokens
 CREATE POLICY "Users can delete own push tokens"
     ON public.push_tokens

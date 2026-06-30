@@ -16,3 +16,8 @@ npm-debug.log*
 .netlify
 *.tsbuildinfo
 next-env.d.ts
+
+# PWA / serwist (generados en build)
+public/sw.js
+public/sw.js.map
+public/swe-worker-*.js

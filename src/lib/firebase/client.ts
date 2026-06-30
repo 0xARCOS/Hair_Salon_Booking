@@ -24,10 +24,13 @@ export async function requestPushPermission(): Promise<string | null> {
       throw new Error("Notification permission denied");
     }
     const messaging = getMessaging(app);
-    // VAPID key is optional if the server uses FCM, but for web push it's often needed.
-    // However, basic FCM web push works out of the box if you just request the token.
+    // Usamos el service worker de Serwist (/sw.js), que incluye el listener
+    // de 'push'. Si no se lo pasamos, Firebase buscaría /firebase-messaging-sw.js
+    // (que no existe) y fallaría al obtener el token.
+    const registration = await navigator.serviceWorker.ready;
     const token = await getToken(messaging, {
       vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
+      serviceWorkerRegistration: registration,
     });
     return token;
   } catch (err) {
