@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef } from "react";
+import { toast } from "sonner";
 import type { User } from "@supabase/supabase-js";
 import type { Service } from "@/types/database";
 import {
@@ -26,24 +27,27 @@ export function GuestBookingForm({ services, user }: GuestBookingFormProps) {
     createGuestAppointment,
     initialState
   );
+  
+  const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (state.ok) {
+      toast.success("¡Cita solicitada con éxito!", {
+        description: "Te confirmaremos la disponibilidad en menos de 24h. ¡Gracias por confiar en nosotras!",
+      });
+      // Reset the form so they can book again if they want to
+      formRef.current?.reset();
+      // Optional: reset the action state (not strictly possible with useActionState directly, 
+      // but the UI will reset and the toast is shown).
+    }
+  }, [state.ok]);
 
   const defaultName =
     (user?.user_metadata?.full_name as string | undefined) ?? "";
 
-  if (state.ok) {
-    return (
-      <div className="booking-form-wrap reveal reveal-delay-2" id="reserva">
-        <div className="booking-form-title">¡Cita solicitada!</div>
-        <div className="booking-form-sub">
-          Hemos recibido tu solicitud. Te confirmaremos la disponibilidad en
-          menos de 24h. ¡Gracias por confiar en nosotras!
-        </div>
-      </div>
-    );
-  }
-
   return (
     <form
+      ref={formRef}
       action={formAction}
       className="booking-form-wrap reveal reveal-delay-2"
       id="reserva"

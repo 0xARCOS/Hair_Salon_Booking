@@ -1,5 +1,6 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans, Outfit, Cormorant_Garamond } from "next/font/google";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 const fontSans = Plus_Jakarta_Sans({
@@ -26,6 +27,9 @@ export const metadata: Metadata = {
   description:
     "Salón de belleza unisex en Guadalajara. Cortes, color, tratamientos y estética con más de 10 años de experiencia. Reserva tu cita online.",
   manifest: "/manifest.json",
+};
+
+export const viewport: Viewport = {
   themeColor: "#000000",
 };
 
@@ -40,6 +44,7 @@ export default function RootLayout({
         className={`${fontSans.variable} ${fontBody.variable} ${fontDisplay.variable} font-sans antialiased min-h-screen`}
       >
         {children}
+        <Toaster />
       </body>
     </html>
   );
