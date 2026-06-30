@@ -6,6 +6,7 @@ import { getUserRole } from "@/lib/queries";
 import { addMinutes, parseISO, startOfDay, endOfDay, format } from "date-fns";
 import { es } from "date-fns/locale";
 import type { AppointmentStatus } from "@/types/database";
+import { adminMessaging } from "@/lib/firebase/server";
 
 const BUSINESS_START_HOUR = 9;
 
@@ -109,6 +110,13 @@ export async function createAppointment(
     status: "confirmed",
   });
   if (error) throw new Error(error.message);
+
+  // Dispatch push notification
+  await notifyStaffByPush({
+    name: user.user_metadata?.full_name || "Cliente",
+    serviceName: service.name || "Servicio",
+    start: slotStart,
+  });
 
   revalidatePath("/dashboard");
 }
@@ -226,6 +234,13 @@ export async function createGuestAppointment(
     message,
   });
 
+  // Aviso al salón por notificación push
+  await notifyStaffByPush({
+    name,
+    serviceName,
+    start,
+  });
+
   revalidatePath("/admin");
   return { error: null, ok: true };
 }
@@ -284,6 +299,40 @@ function escapeHtml(s: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+async function notifyStaffByPush(data: {
+  name: string;
+  serviceName: string;
+  start: Date;
+}) {
+  try {
+    const supabase = await createClient();
+    // Get all staff push tokens
+    const { data: tokens } = await supabase
+      .from("push_tokens")
+      .select("fcm_token");
+    
+    if (!tokens || tokens.length === 0) return;
+    
+    const tokenStrings = tokens.map(t => t.fcm_token);
+    const when = format(data.start, "EEEE d 'de' MMMM 'a las' HH:mm", { locale: es });
+
+    await adminMessaging.sendEachForMulticast({
+      tokens: tokenStrings,
+      notification: {
+        title: "Nueva Cita Reservada",
+        body: `${data.name} · ${data.serviceName} · ${when}`,
+      },
+      webpush: {
+        fcmOptions: {
+          link: "/admin",
+        },
+      },
+    });
+  } catch (err) {
+    console.error("Error dispatching push notifications:", err);
+  }
 }
 
 export type ServiceState = { error: string | null };

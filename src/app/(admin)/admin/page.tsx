@@ -11,6 +11,8 @@ type AppointmentRow = Omit<Appointment, "services" | "profiles"> & {
   profiles: { full_name: string; phone: string | null } | null;
 };
 
+import { PushNotificationToggle } from "@/components/admin/PushNotificationToggle";
+
 export default async function AdminPage() {
   const supabase = await createClient();
 
@@ -32,11 +34,14 @@ export default async function AdminPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold">Panel de administración</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Gestiona citas, clientes y servicios
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Panel de administración</h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Gestiona citas, clientes y servicios
+          </p>
+        </div>
+        <PushNotificationToggle />
       </div>
 
       {/* Stats */}

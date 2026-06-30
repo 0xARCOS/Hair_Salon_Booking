@@ -25,6 +25,8 @@ export const metadata: Metadata = {
   title: "Irene Rodríguez · Salón de Belleza Unisex · Guadalajara",
   description:
     "Salón de belleza unisex en Guadalajara. Cortes, color, tratamientos y estética con más de 10 años de experiencia. Reserva tu cita online.",
+  manifest: "/manifest.json",
+  themeColor: "#000000",
 };
 
 export default function RootLayout({
