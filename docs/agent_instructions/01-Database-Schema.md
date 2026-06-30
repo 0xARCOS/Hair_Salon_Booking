@@ -37,6 +37,10 @@ CREATE TABLE public.appointments (
     start_time TIMESTAMPTZ NOT NULL,
     status appointment_status DEFAULT 'pending',
     gcal_event_id TEXT,
+    guest_name TEXT,
+    guest_phone TEXT,
+    guest_email TEXT,
+    notes TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

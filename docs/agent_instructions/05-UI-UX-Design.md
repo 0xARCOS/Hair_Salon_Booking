@@ -8,9 +8,10 @@ The design must WOW the user at first glance.
 
 ## 2. Components
 ### Landing Page
-- **Hero Section**: Large, bold typography with a dynamic background (e.g., subtle gradient mesh or high-quality salon image).
+- **Hero Section**: Large, bold typography with a dynamic background. Uses a custom vanilla CSS approach via `src/app/landing.css` for highly specialized styling (e.g. glassmorphism elements, custom micro-animations).
 - **Sticky CTA**: "Book Appointment" button always accessible.
 - **Services Grid**: Cards displaying services with prices and duration. Add hover effects to the cards.
+- **Guest Booking Form**: An elegant embedded booking widget (`GuestBookingForm.tsx`) styled via `landing.css`.
 
 ### Client Dashboard
 - Minimalist overview of upcoming appointments.
