@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Tema claro/cálido del Salón Irene Rodríguez (coherente con la web pública) */
+    --background: 33 70% 97%;      /* crema  #fdf9f4 */
+    --foreground: 19 12% 26%;      /* texto  #4a3f3a */
+
+    --card: 0 0% 100%;             /* blanco */
+    --card-foreground: 19 12% 26%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 19 12% 26%;
+
+    --primary: 15 26% 50%;         /* rosa   #a87d6f */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 31 46% 93%;       /* cálido #f5ede4 */
+    --secondary-foreground: 19 12% 26%;
+
+    --muted: 33 40% 94%;
+    --muted-foreground: 18 8% 45%;
+
+    --accent: 16 46% 90%;          /* rosa pálido */
+    --accent-foreground: 15 30% 38%;
+
+    --destructive: 0 72% 45%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 20 25% 88%;
+    --input: 20 25% 88%;
+    --ring: 15 26% 50%;
+
+    --radius: 0.75rem;
+
+    /* Estados semánticos de cita (ver docs/DESIGN.md) — separados del
+       color de marca para que "confirmada" nunca se confunda con un acento. */
+    --status-pending: 41 60% 45%;      /* ámbar   #b98a2f */
+    --status-confirmed: 148 33% 37%;   /* salvia  #3f7d5c */
+    --status-completed: 222 22% 46%;   /* pizarra #5b6c8f */
+    --status-cancelled: 4 42% 46%;     /* teja    #a94b44 */
+  }
+}
+
+@layer components {
+  .status-chip {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium;
+  }
+  .status-chip::before {
+    content: "";
+    @apply w-1.5 h-1.5 rounded-full bg-current;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}

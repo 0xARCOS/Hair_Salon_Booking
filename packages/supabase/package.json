@@ -1,0 +1,19 @@
+{
+  "name": "@irene/supabase",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./browser": "./src/browser.ts",
+    "./server": "./src/server.ts",
+    "./middleware": "./src/middleware-client.ts"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.6.0",
+    "@supabase/supabase-js": "^2.50.0"
+  },
+  "peerDependencies": {
+    "next": "^15.5.19"
+  }
+}

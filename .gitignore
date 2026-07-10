@@ -1,7 +1,8 @@
-/node_modules
-/.next/
+node_modules/
+.next/
 /out/
 /build
+.turbo/
 .DS_Store
 *.pem
 npm-debug.log*
