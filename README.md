@@ -1,94 +1,91 @@
-# Premium Hair Salon - Booking & CRM System
+# Irene Hair Salon Guadalajara
 
-This project is a lightweight, cost-effective landing page and booking system tailored for a service-based business like a Hair Salon. It utilizes a serverless architecture with Next.js (App Router) and Supabase, removing the need for a standalone backend server while maintaining high performance and security.
+Monorepo con dos aplicaciones Next.js independientes:
 
-## 🌟 Project Overview
+- **`apps/web`** — sitio público: precios y servicios (desde Supabase), ubicación,
+  reseñas y un CTA para reservar por llamada o WhatsApp. Sin login, sin reserva
+  online: las clientas siempre reservan por teléfono.
+- **`apps/agenda`** — agenda privada de la dueña/staff (PWA instalable en el
+  móvil), protegida con login. Gestión de citas, ficha de clientas y un botón
+  de recordatorio manual por WhatsApp (`wa.me`, sin API de pago).
 
-The system is divided into three primary user experiences:
-1. **Landing Page (`/`)**: A visually stunning, modern dark-themed showcase of the salon's services, pricing, and aesthetic.
-2. **Client Dashboard (`/dashboard`)**: A private portal where clients can view their upcoming appointments and track their treatment phases.
-3. **Admin Console (`/admin`)**: A restricted panel for staff members to manage daily operations, track revenue, view the schedule, and update appointment statuses.
+Ambas apps comparten el cliente de Supabase y los tipos de la base de datos
+vía `packages/supabase`.
 
-### Tech Stack
-* **Frontend Framework**: Next.js (App Router)
-* **Language**: TypeScript
-* **Styling**: Tailwind CSS + shadcn/ui + custom HSL aesthetic tokens
-* **Database & Auth**: Supabase (PostgreSQL, Row Level Security)
-* **Integrations**: Google Calendar API (via Server Actions)
+## Stack
 
----
+- Next.js 15 (App Router) + React 19 + TypeScript
+- Tailwind CSS
+- Supabase (Postgres + Auth + Row Level Security)
+- Turborepo (workspaces npm)
+- Deploy: 2 sitios Netlify separados apuntando a este mismo repo
 
-## 🚀 How to Integrate Actual Backends
+## Desarrollo local
 
-Currently, the project is equipped with a **Preview Mode** that utilizes mock data when the `.env.local` contains dummy keys. To deploy this to production or connect real data, follow these steps:
-
-### 1. Supabase (Database & Authentication) Setup
-1. **Create a Project**: Go to [Supabase](https://supabase.com/), sign up, and create a new project.
-2. **Apply Schema**: Navigate to the **SQL Editor** in your Supabase dashboard. Open the local file `supabase/schema.sql` found in this repository, copy its contents, and run it. This will:
-   * Create the necessary tables (`profiles`, `services`, `appointments`, `client_crm`).
-   * Set up PostgreSQL Triggers to auto-create client profiles on signup.
-   * Enable Row Level Security (RLS) to ensure clients can only see their own data while staff can see everything.
-3. **Get API Keys**: Navigate to **Project Settings > API**.
-   * Copy the **Project URL**.
-   * Copy the **anon `public` key**.
-4. **Update Environment**: Open `web/.env.local` and replace the dummy keys:
-   ```env
-   NEXT_PUBLIC_SUPABASE_URL="YOUR_SUPABASE_PROJECT_URL"
-   NEXT_PUBLIC_SUPABASE_ANON_KEY="YOUR_SUPABASE_ANON_KEY"
-   ```
-
-### 2. Google Calendar Setup
-The system syncs appointments directly to a Google Calendar to prevent double-booking.
-1. **Google Cloud Console**: Create a new project in the [Google Cloud Console](https://console.cloud.google.com/).
-2. **Enable API**: Go to "APIs & Services" -> "Library" and enable the **Google Calendar API**.
-3. **Create Service Account**: 
-   * Go to "Credentials" -> "Create Credentials" -> "Service Account".
-   * Once created, go to the "Keys" tab, add a new key, and select **JSON**. This will download a file containing your `client_email` and `private_key`.
-4. **Share Calendar**: Open your actual Google Calendar in the browser. Go to settings for the specific calendar you want to use, and **Share** it with the `client_email` of your service account (giving it "Make changes to events" permissions).
-5. **Get Calendar ID**: In the same Google Calendar settings, scroll down to find the **Calendar ID** (usually an email format or `primary`).
-6. **Update Environment**: Open `web/.env.local` and add the keys:
-   ```env
-   GOOGLE_CLIENT_EMAIL="your-service-account-email@...gserviceaccount.com"
-   GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYourKeyHere\n-----END PRIVATE KEY-----\n"
-   GOOGLE_CALENDAR_ID="your-calendar-id"
-   ```
-*(Note: Ensure your `GOOGLE_PRIVATE_KEY` string includes actual `\n` characters so Next.js parses it correctly).*
-
----
-
-## 💻 General Usage
-
-### Running Locally
-To run the development server:
 ```bash
-cd web
 npm install
-npm run dev
+
+# Copia el .env.example de cada app a .env.local y añade tus claves de Supabase
+cp apps/web/.env.example apps/web/.env.local
+cp apps/agenda/.env.example apps/agenda/.env.local
+
+npm run dev:web      # http://localhost:3000
+npm run dev:agenda   # http://localhost:3000 (puerto distinto si corres ambas a la vez)
 ```
-Open `http://localhost:3000` to view the application.
 
-### Managing Staff Access
-By default, new users sign up with a `client` role. To grant an employee access to the `/admin` portal:
-1. Go to your Supabase dashboard.
-2. Open the **Table Editor** and select the `profiles` table.
-3. Find the user's row, and change their `role` column from `client` to `staff`.
-4. The user can now access `http://localhost:3000/admin`.
+## Base de datos
 
----
+1. En el SQL Editor de Supabase, ejecuta `supabase/schema.sql` (crea `services`,
+   `clients`, `appointments`, RLS y la función `complete_appointment`).
+2. Ejecuta `supabase/seed.sql` para cargar servicios de ejemplo.
+3. Crea manualmente en **Authentication** las cuentas del staff que usarán
+   `apps/agenda` — no hay auto-registro; cualquier cuenta autenticada de ese
+   proyecto Supabase puede administrar la agenda.
 
-## 🛠 Maintenance & Best Practices
+## Fichas de cliente locales (por dispositivo)
 
-1. **Adding New Services**:
-   Because the system is dynamic, you can add new hair treatments simply by inserting a new row into the `services` table in Supabase. The landing page and booking engine will automatically fetch and display them.
-   
-2. **UI/UX Updates**:
-   * **Colors**: Global theme colors are controlled via HSL variables in `web/src/app/globals.css`. Modifying the `--primary` variable will update the Champagne/Gold accents across the entire site instantly.
-   * **Components**: New components can be added using shadcn/ui. Run `npx shadcn@latest add [component-name]` in the `/web` directory.
+Además de los datos de contacto en Supabase, `apps/agenda` guarda por cada
+clienta una **ficha rica** — alergias/patch-test, preferencias, notas,
+fórmulas de color y fotos antes/después — en el propio dispositivo
+(IndexedDB vía Dexie, `apps/agenda/src/lib/local/`). Estos datos **no se
+suben a Supabase** ni se sincronizan entre equipos: cada profesional mantiene
+su base local sin límites de almacenamiento en la nube.
 
-3. **Database Migrations**:
-   If you need to change the database schema in the future (e.g., adding a "rewards points" system), do not edit the live database directly. Instead:
-   * Write the alter statements in a new `.sql` file in `supabase/migrations/`.
-   * Apply them to Supabase so you have a trackable history of schema changes.
+Implicaciones:
 
-4. **Security Check**:
-   Never expose your `GOOGLE_PRIVATE_KEY` or Supabase Service Role keys to the client. The Next.js `src/actions/` folder contains Server Actions, which are strictly executed securely on the server-side, protecting your business logic.
+- **Copia de seguridad**: desde **Ajustes** se exporta/importa un archivo
+  `.json` con todas las fichas y fotos. Si se borran los datos del navegador
+  o se cambia de equipo, esa copia es la única forma de recuperarlas; la app
+  recuerda exportar si pasa más de un mes.
+- **Instalación como app (PWA)**: la agenda es instalable (manifest + service
+  worker). En escritorio, botón «Instalar app» en Ajustes o menú del navegador.
+- **Fotos**: se comprimen en el cliente (~1280 px, JPEG) antes de guardarse
+  como `Blob`.
+- **Cifrado opcional** (Ajustes → «Cifrado de las fichas locales»): los campos
+  sensibles (alergias, preferencias, notas y fórmulas — las fotos no) se
+  cifran con AES-GCM y una clave derivada de una frase de paso (PBKDF2,
+  600k iteraciones). La clave vive solo en memoria durante la sesión y nunca
+  sale del dispositivo; las copias de seguridad exportadas viajan cifradas y
+  se restauran en otro equipo con la misma frase. **Si se olvida la frase, los
+  datos cifrados y sus copias son irrecuperables.**
+
+La identidad visual de ambas apps está documentada en `docs/DESIGN.md`.
+
+## Notas de contenido pendientes
+
+La landing (`apps/web`) tiene datos de contacto/ubicación con placeholders
+marcados `TODO` en `apps/web/src/components/landing/LandingClient.tsx`:
+teléfono, dirección, embed de Google Maps y reseñas. Reemplázalos con los
+datos reales del salón antes de publicar.
+
+## Build y deploy
+
+```bash
+npm run build          # ambas apps
+npm run build:web
+npm run build:agenda
+```
+
+Cada app tiene su propio `netlify.toml` (`base` apuntando a `apps/web` o
+`apps/agenda`). En Netlify, crea un sitio por app con ese mismo `Base
+directory` y sus propias variables de entorno de Supabase.

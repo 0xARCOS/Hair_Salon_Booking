@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Icono de la Agenda Irene: el arco de tocador de la identidad (docs/DESIGN.md).
+       Contenido dentro del 80% central para uso maskable. -->
+  <rect width="512" height="512" fill="#a87d6f"/>
+  <path d="M156 396 V236 a100 100 0 0 1 200 0 V396 Z" fill="#faf3ee"/>
+  <path d="M186 396 V240 a70 70 0 0 1 140 0 V396 Z" fill="none" stroke="#c29a5f" stroke-width="6"/>
+  <text x="256" y="352" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-style="italic" font-size="120" fill="#2b211c">I</text>
+</svg>

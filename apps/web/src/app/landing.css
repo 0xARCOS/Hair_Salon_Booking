@@ -1,0 +1,714 @@
+/* Identidad "Tocador" — ver docs/DESIGN.md.
+   Scoped bajo .landing para no afectar a otras rutas. */
+
+.landing *, .landing *::before, .landing *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.landing {
+  --porcelana:  #faf3ee;
+  --espresso:   #2b211c;
+  --arcilla:    #a87d6f;
+  --arcilla-d:  #8f6557;
+  --rubor:      #e9d3ca;
+  --champan:    #c29a5f;
+  --humo:       #7d6e66;
+  --blanco:     #fffdfb;
+  --regla:      rgba(194, 154, 95, 0.4);
+
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-weight: 300;
+  background: var(--porcelana);
+  color: var(--espresso);
+  line-height: 1.65;
+  overflow-x: clip;
+}
+
+html { scroll-behavior: smooth; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
+/* ─── Utilidades de identidad ─────────────────────────── */
+
+.landing h1, .landing h2, .landing h3 {
+  font-family: var(--font-display), Georgia, serif;
+  font-weight: 400;
+  line-height: 1.08;
+  letter-spacing: -0.01em;
+  color: var(--espresso);
+}
+
+.landing h2 em, .landing h1 em {
+  font-style: italic;
+  color: var(--arcilla);
+}
+
+.landing h2 { font-size: clamp(2rem, 4.5vw, 3.2rem); }
+
+.eyebrow,
+.section-label {
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--champan);
+}
+
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  margin-bottom: 2.5rem;
+}
+
+.section-label::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--regla);
+}
+
+/* Revelado suave, un único sistema de movimiento */
+.reveal {
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.reveal.in-view { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+}
+
+/* Botones */
+.btn-solid, .btn-line, .btn-cream, .btn-cream-line {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.8rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background 0.25s, color 0.25s, border-color 0.25s;
+}
+
+.btn-solid {
+  background: var(--espresso);
+  color: var(--porcelana);
+}
+.btn-solid:hover { background: var(--arcilla-d); }
+
+.btn-line {
+  border: 1px solid var(--espresso);
+  color: var(--espresso);
+}
+.btn-line:hover { border-color: var(--arcilla); color: var(--arcilla-d); }
+
+.btn-cream {
+  background: var(--porcelana);
+  color: var(--espresso);
+  font-size: 1rem;
+  letter-spacing: 0.06em;
+  text-transform: none;
+  font-weight: 500;
+}
+.btn-cream:hover { background: var(--rubor); }
+
+.btn-cream-line {
+  border: 1px solid rgba(250, 243, 238, 0.6);
+  color: var(--porcelana);
+}
+.btn-cream-line:hover { border-color: var(--porcelana); background: rgba(250,243,238,0.1); }
+
+.landing a:focus-visible,
+.landing button:focus-visible {
+  outline: 2px solid var(--champan);
+  outline-offset: 3px;
+}
+
+/* El arco de tocador — elemento firma */
+.arch {
+  border-radius: 999px 999px 0 0;
+  overflow: hidden;
+  background: var(--rubor);
+}
+.arch img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: sepia(0.12) saturate(0.92);
+}
+
+.landing figcaption {
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--humo);
+  margin-top: 0.9rem;
+}
+
+/* ─── NAV ─────────────────────────────────────────────── */
+
+.landing nav#navbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.4rem clamp(1.2rem, 4vw, 4rem);
+  transition: background 0.4s, box-shadow 0.4s, padding 0.3s;
+}
+
+.landing nav#navbar.scrolled {
+  background: rgba(250, 243, 238, 0.94);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 1px 0 var(--regla);
+  padding-top: 0.9rem;
+  padding-bottom: 0.9rem;
+}
+
+.nav-logo {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 1.35rem;
+  color: var(--espresso);
+  text-decoration: none;
+  letter-spacing: 0.02em;
+}
+.nav-logo em { font-style: italic; color: var(--arcilla); }
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 2.2rem;
+  list-style: none;
+}
+
+.nav-links a {
+  text-decoration: none;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--espresso);
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--arcilla); }
+
+.nav-links .nav-cta {
+  border: 1px solid var(--espresso);
+  padding: 0.55rem 1.2rem;
+  transition: background 0.25s, color 0.25s;
+}
+.nav-links .nav-cta:hover {
+  background: var(--espresso);
+  color: var(--porcelana);
+}
+
+.hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+}
+.hamburger span {
+  width: 22px; height: 1.5px;
+  background: var(--espresso);
+  transition: transform 0.3s, opacity 0.3s;
+}
+.hamburger.active span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+.hamburger.active span:nth-child(2) { opacity: 0; }
+.hamburger.active span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+
+/* ─── HERO ────────────────────────────────────────────── */
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+  gap: clamp(2rem, 6vw, 6rem);
+  align-items: center;
+  min-height: 100svh;
+  padding: 8rem clamp(1.2rem, 4vw, 4rem) 4rem;
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+.hero .eyebrow { margin-bottom: 1.6rem; }
+
+.hero h1 {
+  font-size: clamp(3rem, 7.5vw, 5.6rem);
+}
+
+.hero-desc {
+  margin-top: 1.8rem;
+  max-width: 30rem;
+  color: var(--humo);
+  font-size: 1.05rem;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  margin-top: 2.4rem;
+}
+
+.hero-phone {
+  margin-top: 2.6rem;
+  padding-top: 1.4rem;
+  border-top: 1px solid var(--regla);
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  max-width: 30rem;
+}
+.hero-phone span {
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--humo);
+}
+.hero-phone a {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 1.5rem;
+  color: var(--espresso);
+  text-decoration: none;
+}
+.hero-phone a:hover { color: var(--arcilla); }
+
+.hero-visual {
+  position: relative;
+  justify-self: end;
+  width: min(100%, 420px);
+}
+
+.arch-hero { aspect-ratio: 4 / 5.4; position: relative; z-index: 1; }
+
+/* Segundo arco en línea champán, desplazado: el espejo detrás del espejo */
+.arch-outline {
+  position: absolute;
+  inset: 0;
+  transform: translate(-1.6rem, 1.6rem);
+  border: 1px solid var(--champan);
+  border-radius: 999px 999px 0 0;
+  z-index: 0;
+}
+
+/* ─── EL SALÓN ────────────────────────────────────────── */
+
+.about,
+.services,
+.reviews,
+.gallery,
+.contact {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: clamp(4rem, 9vw, 7.5rem) clamp(1.2rem, 4vw, 4rem) 0;
+}
+
+.about-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 6fr);
+  gap: clamp(2rem, 6vw, 6rem);
+  align-items: start;
+}
+
+.about-visual { width: min(100%, 340px); }
+.arch-small { aspect-ratio: 4 / 5; }
+
+.about-content p {
+  margin-top: 1.2rem;
+  color: var(--humo);
+  max-width: 34rem;
+}
+
+.about-list {
+  margin-top: 2rem;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem 2rem;
+  max-width: 34rem;
+}
+
+.about-list li {
+  position: relative;
+  padding-left: 1.4rem;
+  font-size: 0.95rem;
+}
+.about-list li::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0.62em;
+  width: 0.65rem; height: 1px;
+  background: var(--champan);
+}
+
+/* ─── LA CARTA ────────────────────────────────────────── */
+
+.services-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+.services-head p {
+  color: var(--humo);
+  max-width: 24rem;
+  font-size: 0.95rem;
+}
+
+.carta {
+  list-style: none;
+  max-width: 760px;
+}
+
+.carta-row {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 1.15rem 0;
+  border-bottom: 1px solid var(--regla);
+}
+.carta-row:first-child { border-top: 1px solid var(--regla); }
+
+.carta-name {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.carta-name > span:first-child {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 1.25rem;
+}
+.carta-meta {
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--humo);
+}
+
+.carta-leader {
+  flex: 1;
+  border-bottom: 1px dotted var(--champan);
+  transform: translateY(-0.35rem);
+  min-width: 2rem;
+}
+
+.carta-price {
+  font-weight: 500;
+  font-size: 1.05rem;
+  color: var(--arcilla-d);
+  white-space: nowrap;
+}
+
+.carta-empty,
+.services-note {
+  color: var(--humo);
+  font-size: 0.95rem;
+}
+.services-note { margin-top: 2rem; font-style: italic; }
+
+/* ─── BANDA DE RESERVA ────────────────────────────────── */
+
+.booking-band {
+  margin-top: clamp(4rem, 9vw, 7.5rem);
+  background: var(--arcilla);
+  color: var(--porcelana);
+}
+
+.booking-band-inner {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: clamp(3.5rem, 7vw, 5.5rem) clamp(1.2rem, 4vw, 4rem);
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: 2rem;
+  align-items: center;
+}
+
+.booking-band h2 { color: var(--porcelana); }
+.booking-band h2 em { color: var(--rubor); }
+.booking-band p {
+  grid-column: 1;
+  margin-top: 1rem;
+  color: rgba(250, 243, 238, 0.85);
+  max-width: 30rem;
+}
+
+.booking-band-actions {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  justify-self: end;
+  width: min(100%, 320px);
+}
+
+/* ─── OPINIONES ───────────────────────────────────────── */
+
+.reviews-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+}
+
+.review p {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 1.15rem;
+  line-height: 1.5;
+}
+
+.review footer {
+  margin-top: 1.4rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--regla);
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.review cite { font-style: normal; font-weight: 500; font-size: 0.9rem; }
+.review footer span {
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--champan);
+}
+
+.reviews-cta { margin-top: 3rem; }
+
+/* ─── TRABAJOS ────────────────────────────────────────── */
+
+.gallery-head { margin-bottom: 3rem; }
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(1rem, 2.5vw, 2rem);
+  align-items: end;
+}
+
+.arch-gallery { aspect-ratio: 3 / 4.2; }
+.gallery-item.raised { margin-bottom: 3rem; }
+
+/* ─── VISÍTANOS ───────────────────────────────────────── */
+
+.contact-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+  gap: clamp(2rem, 6vw, 6rem);
+  align-items: start;
+}
+
+.info-list {
+  list-style: none;
+  margin-top: 2.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.6rem;
+}
+
+.info-list li {
+  display: flex;
+  gap: 1.1rem;
+  align-items: flex-start;
+}
+
+.info-icon {
+  width: 2.4rem; height: 2.4rem;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--regla);
+  border-radius: 999px 999px 0 0;
+  color: var(--arcilla);
+}
+.info-icon svg { width: 1.1rem; height: 1.1rem; }
+
+.info-label {
+  display: block;
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--humo);
+}
+.info-value { font-size: 1rem; }
+.info-value a { color: var(--espresso); text-decoration: none; }
+.info-value a:hover { color: var(--arcilla); }
+
+.hours-card {
+  border: 1px solid var(--regla);
+  padding: 2rem;
+  background: var(--blanco);
+}
+.hours-card h3 { font-size: 1.4rem; margin-bottom: 1.2rem; }
+
+.hours-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.55rem 0;
+  border-bottom: 1px dotted var(--regla);
+  font-size: 0.95rem;
+}
+.hours-row:last-child { border-bottom: none; }
+.hours-row.today {
+  font-weight: 500;
+  color: var(--arcilla-d);
+}
+.hours-row.today .hours-day::after {
+  content: " · hoy";
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--champan);
+}
+.hours-closed { color: var(--humo); font-style: italic; }
+
+/* ─── MAPA ────────────────────────────────────────────── */
+
+.map-wrap {
+  margin-top: clamp(4rem, 9vw, 7rem);
+  border-top: 1px solid var(--regla);
+}
+.map-wrap iframe {
+  display: block;
+  width: 100%;
+  height: 380px;
+  border: 0;
+  filter: sepia(0.25) saturate(0.8);
+}
+
+/* ─── FOOTER ──────────────────────────────────────────── */
+
+.site-footer {
+  background: var(--espresso);
+  color: var(--porcelana);
+}
+
+.footer-inner {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 3.5rem clamp(1.2rem, 4vw, 4rem);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.footer-logo {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 1.35rem;
+  color: var(--porcelana);
+  text-decoration: none;
+}
+.footer-logo em { font-style: italic; color: var(--rubor); }
+
+.footer-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.8rem;
+}
+.footer-nav a {
+  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(250, 243, 238, 0.75);
+  text-decoration: none;
+}
+.footer-nav a:hover { color: var(--porcelana); }
+
+.footer-legal {
+  width: 100%;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(250, 243, 238, 0.15);
+  font-size: 0.8rem;
+  color: rgba(250, 243, 238, 0.55);
+}
+
+/* ─── WHATSAPP FLOAT ──────────────────────────────────── */
+
+.wa-float {
+  position: fixed;
+  right: 1.4rem; bottom: 1.4rem;
+  z-index: 90;
+  width: 3.2rem; height: 3.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #25d366;
+  border-radius: 50%;
+  box-shadow: 0 6px 20px rgba(43, 33, 28, 0.25);
+  transition: transform 0.2s;
+}
+.wa-float:hover { transform: translateY(-2px); }
+.wa-float svg { width: 1.6rem; height: 1.6rem; fill: #fff; }
+
+/* ─── RESPONSIVE ──────────────────────────────────────── */
+
+@media (max-width: 960px) {
+  .hero {
+    grid-template-columns: 1fr;
+    min-height: auto;
+    padding-top: 7rem;
+  }
+  .hero-visual { justify-self: start; }
+
+  .about-grid,
+  .contact-grid,
+  .booking-band-inner { grid-template-columns: 1fr; }
+
+  .booking-band-actions {
+    grid-column: 1;
+    grid-row: auto;
+    justify-self: start;
+  }
+
+  .reviews-list { grid-template-columns: 1fr; }
+  .review { max-width: 40rem; }
+
+  .gallery-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .gallery-item.raised { margin-bottom: 2rem; }
+}
+
+@media (max-width: 720px) {
+  .nav-links {
+    position: fixed;
+    inset: 0;
+    background: var(--porcelana);
+    flex-direction: column;
+    justify-content: center;
+    gap: 2rem;
+    transform: translateX(100%);
+    transition: transform 0.35s ease;
+  }
+  .nav-links.open { transform: none; }
+  .nav-links a { font-size: 1rem; }
+  .hamburger { display: flex; z-index: 110; }
+
+  .about-list { grid-template-columns: 1fr; }
+
+  .carta-row {
+    flex-wrap: wrap;
+    gap: 0.3rem 1rem;
+  }
+  .carta-leader { display: none; }
+  .carta-price { margin-left: auto; }
+
+  .gallery-grid { grid-template-columns: 1fr; }
+  .gallery-item.raised { margin-bottom: 0; }
+}
