@@ -6,8 +6,12 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
   const isLoginPage = pathname.startsWith("/login");
+  const isPublicAuthRoute =
+    isLoginPage ||
+    pathname.startsWith("/forgot-password") ||
+    pathname.startsWith("/auth/callback");
 
-  if (!user && !isLoginPage) {
+  if (!user && !isPublicAuthRoute) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
