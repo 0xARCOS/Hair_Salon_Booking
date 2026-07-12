@@ -1,7 +1,7 @@
 [build]
   base = "apps/agenda"
   command = "cd ../.. && npx turbo run build --filter=agenda"
-  publish = "apps/agenda/.next"
+  publish = ".next"
 
 [build.environment]
   NODE_VERSION = "20"
