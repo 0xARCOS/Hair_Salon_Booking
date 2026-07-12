@@ -5,7 +5,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 --    y gestionada desde la agenda privada.
 CREATE TABLE public.services (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name TEXT NOT NULL,
+    name TEXT NOT NULL UNIQUE,
     price NUMERIC(10, 2) NOT NULL,
     duration_mins INT NOT NULL,
     is_multi_session BOOLEAN DEFAULT FALSE,
@@ -76,3 +76,11 @@ CREATE POLICY "Authenticated can manage clients" ON public.clients
 
 CREATE POLICY "Authenticated can manage appointments" ON public.appointments
   FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+
+-- 6. Grants — RLS solo filtra filas; sin estos GRANT, PostgREST devuelve
+--    "permission denied" aunque la política lo permita.
+GRANT SELECT ON public.services TO anon, authenticated;
+GRANT INSERT, UPDATE, DELETE ON public.services TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.clients TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.appointments TO authenticated;
+GRANT EXECUTE ON FUNCTION public.complete_appointment(UUID) TO authenticated;
