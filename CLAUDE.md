@@ -16,8 +16,10 @@ npm run typecheck          # both apps (tsc --noEmit)
 ```
 
 Each app needs its own `.env.local` (copy from its `.env.example`) with the
-Supabase URL and anon key. There is no automated DB tooling: `supabase/schema.sql`
-and `supabase/seed.sql` are applied by hand in the Supabase SQL Editor.
+Supabase URL and anon key. The schema lives in `supabase/migrations/`
+(date-ordered files, Supabase CLI naming); they and `supabase/seed.sql` are
+applied by hand in the Supabase SQL Editor (or `supabase db push`). Schema
+changes are always a NEW migration file — see `supabase/README.md`.
 
 ## Architecture
 
@@ -38,7 +40,7 @@ Tailwind) apps deployed as two separate Netlify sites (each app has its own
 
 ### Data model (Supabase)
 
-`supabase/schema.sql` defines: `services` (public read), `clients` (staff-managed
+`supabase/migrations/` defines: `services` (public read), `clients` (staff-managed
 contact records — clients never log in, no relation to auth.users),
 `appointments` (client_id NOT NULL, created by staff), plus the ficha-sync
 tables `client_fichas`, `client_fotos`, `agenda_settings` and a private Storage

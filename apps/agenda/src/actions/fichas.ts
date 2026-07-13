@@ -26,7 +26,7 @@ export interface FichaPushInput {
   updatedAt: number;
 }
 
-/** Upsert atómico last-write-wins vía la RPC de schema.sql. */
+/** Upsert atómico last-write-wins vía la RPC de supabase/migrations/. */
 export async function upsertFichaIfNewer(input: FichaPushInput): Promise<void> {
   const supabase = await requireUser();
   const { error } = await supabase.rpc("upsert_ficha_if_newer", {

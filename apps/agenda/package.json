@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@salon-app/supabase": "*",
+    "@sentry/nextjs": "^10.65.0",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
     "dexie": "^4.4.4",
