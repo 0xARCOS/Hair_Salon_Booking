@@ -23,27 +23,16 @@ archivos editados, no una reescritura desde cero. Checklist, en orden:
 
 ## 3. Identidad de la agenda (`apps/agenda`)
 
-- Editar `apps/agenda/src/config/brand.ts` (nombre completo, nombre corto,
-  slug, descripción). Este único archivo alimenta el `<title>`, el manifest
-  de la PWA, el encabezado de navegación, la pantalla de login y el mensaje
-  de recordatorio de WhatsApp.
 - Reemplazar `apps/agenda/public/icons/icon.svg` por el logo real de la
-  clienta, y regenerar los PNG de instalación:
-  ```
-  node -e "
-  const sharp = require('sharp');
-  const fs = require('fs');
-  const svg = fs.readFileSync('apps/agenda/public/icons/icon.svg');
-  Promise.all([192, 512].map(size =>
-    sharp(svg, { density: 384 }).resize(size, size).png()
-      .toFile(\`apps/agenda/public/icons/icon-\${size}.png\`)
-  ));
-  "
-  cp apps/agenda/public/icons/icon-512.png apps/agenda/src/app/icon.png
-  cp apps/agenda/public/icons/icon-192.png apps/agenda/src/app/apple-icon.png
-  ```
-  (`sharp` no es una dependencia declarada — se usa transitivamente desde
-  `node_modules` solo para esta generación puntual de assets).
+  clienta.
+- Correr **`node scripts/new-client.mjs`** (interactivo, o con
+  `--full-name/--short-name/--slug/--description`): reescribe
+  `apps/agenda/src/config/brand.ts` — el archivo que alimenta el `<title>`,
+  el manifest de la PWA, el encabezado de navegación, la pantalla de login y
+  el mensaje de recordatorio de WhatsApp — y regenera todos los PNG de icono
+  (instalación PWA 192/512 + favicons de agenda y web) desde el SVG.
+  (`sharp` no es una dependencia declarada — llega transitivamente por Next;
+  requiere `npm install` hecho.)
 
 ## 4. Colores de marca
 
