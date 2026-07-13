@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -21,14 +21,18 @@ import {
   storageEstimate,
   type FichaLocal as Ficha,
   type FormulaEntry,
+  type FotoLocal,
 } from "@/lib/local/db";
 import { compressImage } from "@/lib/local/image";
 import {
   useEncryptionState,
   encryptFicha,
   decryptFicha,
+  encryptBlob,
+  decryptBlob,
   unlock,
 } from "@/lib/local/crypto";
+import { syncAll, syncFichaPush, requestFotoDeletion } from "@/lib/local/sync";
 
 type Tab = "notas" | "formulas" | "fotos";
 
@@ -57,34 +61,63 @@ export function FichaLocal({ clientId }: { clientId: string }) {
   const cryptoRef = useRef({ enabled: encEnabled, key: encKey });
   cryptoRef.current = { enabled: encEnabled, key: encKey };
 
+  // Marca si el staff ya empezó a editar desde que se montó esta ficha —
+  // evita que un pull en segundo plano (tras sync) pise un borrador en curso.
+  const editedRef = useRef(false);
+
+  const loadFicha = useCallback(async (): Promise<void> => {
+    const stored = await localDB.fichas.get(clientId);
+    const { enabled, key } = cryptoRef.current;
+    // Con cifrado activado hace falta la clave tanto para leer fichas
+    // cifradas como para crear nuevas (se guardarían cifradas).
+    if (enabled && !key && (stored?.enc || !stored)) {
+      setLocked(true);
+      return;
+    }
+    let loaded = stored ?? emptyFicha(clientId);
+    if (loaded.enc && key) {
+      try {
+        loaded = await decryptFicha(loaded, key);
+      } catch {
+        setLocked(true);
+        return;
+      }
+    }
+    setLocked(false);
+    setFicha(loaded);
+  }, [clientId]);
+
   useEffect(() => {
     if (encEnabled === null) return; // aún comprobando el estado del cifrado
     let cancelled = false;
     setFicha(null);
     setLocked(false);
-    (async () => {
-      const stored = await localDB.fichas.get(clientId);
-      // Con cifrado activado hace falta la clave tanto para leer fichas
-      // cifradas como para crear nuevas (se guardarían cifradas).
-      if (encEnabled && !encKey && (stored?.enc || !stored)) {
-        if (!cancelled) setLocked(true);
-        return;
-      }
-      let loaded = stored ?? emptyFicha(clientId);
-      if (loaded.enc && encKey) {
-        try {
-          loaded = await decryptFicha(loaded, encKey);
-        } catch {
-          if (!cancelled) setLocked(true);
-          return;
-        }
-      }
-      if (!cancelled) setFicha(loaded);
-    })();
+    editedRef.current = false;
+
+    loadFicha().then(() => {
+      if (cancelled) return;
+      // Barrido al montar la página (cubre PWA que se perdió el evento
+      // `online`); si trae una versión remota más nueva, refresca la
+      // pantalla — pero solo si el staff no empezó a editar mientras tanto.
+      syncAll(clientId).then(() => {
+        if (!cancelled && !editedRef.current) loadFicha();
+      });
+    });
+
     return () => {
       cancelled = true;
     };
-  }, [clientId, encEnabled, encKey]);
+  }, [clientId, encEnabled, encKey, loadFicha]);
+
+  useEffect(() => {
+    function handleOnline() {
+      syncAll(clientId).then(() => {
+        if (!editedRef.current) loadFicha();
+      });
+    }
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
+  }, [clientId, loadFicha]);
 
   const fotos = useLiveQuery(
     () => localDB.fotos.where("clientId").equals(clientId).reverse().sortBy("createdAt"),
@@ -97,8 +130,10 @@ export function FichaLocal({ clientId }: { clientId: string }) {
     });
   }, [fotos?.length]);
 
-  // Autosave con debounce: cada cambio se persiste a IndexedDB a los 600 ms.
+  // Autosave con debounce: cada cambio se persiste a IndexedDB a los 600 ms,
+  // y tras persistir se dispara un push a Supabase (fire-and-forget).
   function save(patch: Partial<Ficha>) {
+    editedRef.current = true;
     setFicha((prev) => {
       if (!prev) return prev;
       const next: Ficha = { ...prev, ...patch, updatedAt: Date.now() };
@@ -109,6 +144,7 @@ export function FichaLocal({ clientId }: { clientId: string }) {
         await localDB.fichas.put(enabled && key ? await encryptFicha(next, key) : next);
         setSaveState("saved");
         setTimeout(() => setSaveState("idle"), 2000);
+        syncFichaPush(clientId).catch(() => {});
       }, 600);
       return next;
     });
@@ -179,7 +215,14 @@ export function FichaLocal({ clientId }: { clientId: string }) {
       <div className="p-5">
         {tab === "notas" && <NotasTab ficha={ficha} onChange={save} />}
         {tab === "formulas" && <FormulasTab ficha={ficha} onChange={save} />}
-        {tab === "fotos" && <FotosTab clientId={clientId} fotos={fotos ?? []} />}
+        {tab === "fotos" && (
+          <FotosTab
+            clientId={clientId}
+            fotos={fotos ?? []}
+            encEnabled={!!encEnabled}
+            encKey={encKey}
+          />
+        )}
       </div>
     </section>
   );
@@ -392,12 +435,18 @@ function FormulasTab({
 
 /* ─── Fotos ──────────────────────────────────────────────────────────── */
 
+type FotoRecord = FotoLocal;
+
 function FotosTab({
   clientId,
   fotos,
+  encEnabled,
+  encKey,
 }: {
   clientId: string;
-  fotos: { id?: number; blob: Blob; caption: string; createdAt: number }[];
+  fotos: FotoRecord[];
+  encEnabled: boolean;
+  encKey: CryptoKey | null;
 }) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -410,13 +459,16 @@ function FotosTab({
     try {
       for (const file of Array.from(files)) {
         const blob = await compressImage(file);
-        await localDB.fotos.add({
-          clientId,
-          blob,
-          caption: "",
-          createdAt: Date.now(),
-        });
+        const mimeType = blob.type || "image/jpeg";
+        let stored = blob;
+        let enc = false;
+        if (encEnabled && encKey) {
+          stored = await encryptBlob(encKey, blob);
+          enc = true;
+        }
+        await localDB.fotos.add({ clientId, blob: stored, caption: "", createdAt: Date.now(), mimeType, enc });
       }
+      syncAll(clientId).catch(() => {});
     } catch {
       setError("No se pudo guardar la foto. Comprueba el espacio disponible en Ajustes.");
     } finally {
@@ -425,8 +477,10 @@ function FotosTab({
     }
   }
 
-  async function removeFoto(id?: number) {
-    if (id != null) await localDB.fotos.delete(id);
+  async function removeFoto(foto: FotoRecord) {
+    if (foto.id == null) return;
+    await localDB.fotos.delete(foto.id);
+    if (foto.remoteId) requestFotoDeletion(clientId, foto.remoteId).catch(() => {});
   }
 
   async function updateCaption(id: number | undefined, caption: string) {
@@ -480,7 +534,8 @@ function FotosTab({
             <FotoCard
               key={foto.id}
               foto={foto}
-              onRemove={() => removeFoto(foto.id)}
+              encKey={encKey}
+              onRemove={() => removeFoto(foto)}
               onCaption={(c) => updateCaption(foto.id, c)}
             />
           ))}
@@ -492,25 +547,47 @@ function FotosTab({
 
 function FotoCard({
   foto,
+  encKey,
   onRemove,
   onCaption,
 }: {
-  foto: { blob: Blob; caption: string; createdAt: number };
+  foto: FotoRecord;
+  encKey: CryptoKey | null;
   onRemove: () => void;
   onCaption: (caption: string) => void;
 }) {
   const [url, setUrl] = useState<string | null>(null);
+  const locked = foto.enc && !encKey;
 
   useEffect(() => {
-    const objectUrl = URL.createObjectURL(foto.blob);
-    setUrl(objectUrl);
-    return () => URL.revokeObjectURL(objectUrl);
-  }, [foto.blob]);
+    if (locked) {
+      setUrl(null);
+      return;
+    }
+    let objectUrl: string | null = null;
+    let cancelled = false;
+    (async () => {
+      const blob = foto.enc && encKey ? await decryptBlob(encKey, foto.blob, foto.mimeType) : foto.blob;
+      if (cancelled) return;
+      objectUrl = URL.createObjectURL(blob);
+      setUrl(objectUrl);
+    })();
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [foto.blob, foto.enc, foto.mimeType, encKey, locked]);
 
   return (
     <li className="rounded-md border border-border overflow-hidden bg-secondary/30">
       <div className="aspect-square relative group">
-        {url && (
+        {locked && (
+          <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 text-muted-foreground">
+            <Lock className="w-5 h-5" />
+            <span className="text-[10px]">Bloqueada</span>
+          </div>
+        )}
+        {!locked && url && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={url}

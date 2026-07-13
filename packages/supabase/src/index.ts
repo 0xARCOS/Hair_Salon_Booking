@@ -1,1 +1,9 @@
-export type { Service, Client, Appointment, AppointmentStatus } from "./types";
+export type {
+  Service,
+  Client,
+  Appointment,
+  AppointmentStatus,
+  ClientFicha,
+  ClientFoto,
+  ClientFormulaEntry,
+} from "./types";

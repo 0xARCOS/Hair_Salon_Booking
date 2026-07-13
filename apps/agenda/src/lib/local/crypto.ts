@@ -1,5 +1,6 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { localDB, type FichaLocal, type FormulaEntry } from "./db";
+import { localDB, type FichaLocal, type FotoLocal, type FormulaEntry } from "./db";
+import { pullCryptoSettings, pushCryptoSettings, deleteCryptoSettings } from "@/actions/fichas";
 
 // Cifrado opcional de los campos sensibles de las fichas locales
 // (alergias, preferencias, notas y fórmulas — las fotos NO se cifran).
@@ -99,9 +100,50 @@ async function decryptString(key: CryptoKey, payload: string): Promise<string> {
   return new TextDecoder().decode(plain);
 }
 
+/** Cifra los bytes crudos de un Blob (fotos). Sin pasar por base64 — para no
+    inflar ~33% una foto ya comprimida. Formato: IV (12 bytes) || ciphertext. */
+export async function encryptBlob(key: CryptoKey, blob: Blob): Promise<Blob> {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const cipher = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv },
+    key,
+    await blob.arrayBuffer()
+  );
+  return new Blob([iv, new Uint8Array(cipher)], { type: "application/octet-stream" });
+}
+
+/** Inversa de encryptBlob. `mimeType` es el tipo original de la imagen (se
+    pierde en el Blob cifrado), necesario para que el resultado renderice. */
+export async function decryptBlob(key: CryptoKey, blob: Blob, mimeType: string): Promise<Blob> {
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  const iv = bytes.slice(0, 12);
+  const cipher = bytes.slice(12);
+  const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: iv as BufferSource }, key, cipher as BufferSource);
+  return new Blob([plain], { type: mimeType });
+}
+
 /* ─── Estado del cifrado ─────────────────────────────────────────────── */
 
+// El bootstrap remoto (salt/keyCheck de otro dispositivo) se dispara una
+// sola vez por carga de página, la primera vez que algo pregunta si el
+// cifrado está activo — así FichaLocal y EncryptionPanel (que montan en
+// paralelo) no disparan el pull dos veces ni se pisan.
+let bootstrapped: Promise<void> | null = null;
+
+async function bootstrapFromRemote(): Promise<void> {
+  if (await localDB.meta.get(META_SALT)) return; // ya hay datos locales
+  const remote = await pullCryptoSettings().catch(() => null);
+  if (remote) {
+    await localDB.meta.bulkPut([
+      { key: META_SALT, value: remote.salt },
+      { key: META_CHECK, value: remote.keyCheck },
+    ]);
+  }
+}
+
 export async function isEncryptionEnabled(): Promise<boolean> {
+  bootstrapped ??= bootstrapFromRemote();
+  await bootstrapped;
   return (await localDB.meta.get(META_SALT)) !== undefined;
 }
 
@@ -157,7 +199,27 @@ export async function decryptFicha(ficha: FichaLocal, key: CryptoKey): Promise<F
 
 /* ─── Activar / desactivar ───────────────────────────────────────────── */
 
-/** Activa el cifrado: crea salt+keyCheck y cifra todas las fichas existentes. */
+/** Cifra el blob de una foto; los blobs pesan más que el texto de una
+    ficha, así que se procesan en serie en vez de con Promise.all. */
+async function encryptFotosSequential(fotos: FotoLocal[], key: CryptoKey): Promise<FotoLocal[]> {
+  const out: FotoLocal[] = [];
+  for (const f of fotos) {
+    out.push({ ...f, blob: await encryptBlob(key, f.blob), enc: true });
+  }
+  return out;
+}
+
+async function decryptFotosSequential(fotos: FotoLocal[], key: CryptoKey): Promise<FotoLocal[]> {
+  const out: FotoLocal[] = [];
+  for (const f of fotos) {
+    out.push({ ...f, blob: await decryptBlob(key, f.blob, f.mimeType), enc: false });
+  }
+  return out;
+}
+
+/** Activa el cifrado: crea salt+keyCheck y cifra todas las fichas y fotos
+    existentes. Las fotos ya subidas a Storage en claro requieren
+    re-subirse — sync.ts las detecta como pendientes al cambiar `enc`. */
 export async function enableEncryption(passphrase: string): Promise<void> {
   if (await isEncryptionEnabled()) throw new Error("El cifrado ya está activado.");
   const salt = crypto.getRandomValues(new Uint8Array(16));
@@ -166,13 +228,18 @@ export async function enableEncryption(passphrase: string): Promise<void> {
 
   // WebCrypto no puede esperar dentro de una transacción Dexie: se cifra
   // en memoria y se escribe todo junto después.
-  const fichas = await localDB.fichas.toArray();
-  const encrypted = await Promise.all(
+  const [fichas, fotos] = await Promise.all([localDB.fichas.toArray(), localDB.fotos.toArray()]);
+  const encryptedFichas = await Promise.all(
     fichas.filter((f) => !f.enc).map((f) => encryptFicha(f, key))
   );
+  const encryptedFotos = await encryptFotosSequential(
+    fotos.filter((f) => !f.enc),
+    key
+  );
 
-  await localDB.transaction("rw", localDB.fichas, localDB.meta, async () => {
-    await localDB.fichas.bulkPut(encrypted);
+  await localDB.transaction("rw", localDB.fichas, localDB.fotos, localDB.meta, async () => {
+    await localDB.fichas.bulkPut(encryptedFichas);
+    await localDB.fotos.bulkPut(encryptedFotos);
     await localDB.meta.bulkPut([
       { key: META_SALT, value: toB64(salt) },
       { key: META_CHECK, value: keyCheck },
@@ -181,25 +248,37 @@ export async function enableEncryption(passphrase: string): Promise<void> {
 
   sessionKey = key;
   notify();
+
+  // Best-effort: si falla la sincronización (offline), el salt/keyCheck se
+  // quedan solo locales por ahora y este dispositivo sigue funcionando;
+  // otro dispositivo simplemente no podrá desbloquear hasta que se reintente.
+  await pushCryptoSettings({ salt: toB64(salt), keyCheck }).catch(() => {});
 }
 
-/** Desactiva el cifrado: descifra todas las fichas y elimina salt+keyCheck. */
+/** Desactiva el cifrado: descifra todas las fichas y fotos, elimina salt+keyCheck. */
 export async function disableEncryption(passphrase: string): Promise<void> {
   if (!(await unlock(passphrase))) throw new Error("Frase de paso incorrecta.");
   const key = sessionKey!;
 
-  const fichas = await localDB.fichas.toArray();
-  const decrypted = await Promise.all(
+  const [fichas, fotos] = await Promise.all([localDB.fichas.toArray(), localDB.fotos.toArray()]);
+  const decryptedFichas = await Promise.all(
     fichas.filter((f) => f.enc).map((f) => decryptFicha(f, key))
   );
+  const decryptedFotos = await decryptFotosSequential(
+    fotos.filter((f) => f.enc),
+    key
+  );
 
-  await localDB.transaction("rw", localDB.fichas, localDB.meta, async () => {
-    await localDB.fichas.bulkPut(decrypted);
+  await localDB.transaction("rw", localDB.fichas, localDB.fotos, localDB.meta, async () => {
+    await localDB.fichas.bulkPut(decryptedFichas);
+    await localDB.fotos.bulkPut(decryptedFotos);
     await localDB.meta.bulkDelete([META_SALT, META_CHECK]);
   });
 
   sessionKey = null;
   notify();
+
+  await deleteCryptoSettings().catch(() => {});
 }
 
 /* ─── Hook de estado para componentes ────────────────────────────────── */

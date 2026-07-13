@@ -36,10 +36,10 @@ export function EncryptionPanel() {
 
       <p className="text-sm text-muted-foreground max-w-prose">
         Protege con una frase de paso los campos sensibles de las fichas
-        (alergias, preferencias, notas y fórmulas). Las fotos no se cifran. La
-        clave se deriva en este dispositivo y nunca sale de él: sin la frase,
-        ni siquiera quien tenga acceso al equipo (o a una copia exportada)
-        puede leer esos campos.
+        (alergias, preferencias, notas, fórmulas y fotos). La clave se deriva
+        en este dispositivo y nunca sale de él: sin la frase, ni siquiera
+        quien tenga acceso al equipo, a una copia exportada, o al servidor
+        donde se sincronizan, puede leer esos campos ni ver las fotos.
       </p>
 
       <p className="text-sm bg-status-pending/10 text-status-pending rounded-md px-3 py-2 flex items-start gap-2 max-w-prose">
