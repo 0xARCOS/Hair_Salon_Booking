@@ -2,9 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClient } from "@irene/supabase/server";
+import { createClient } from "@salon-app/supabase/server";
 import { addMinutes, parseISO, startOfDay, endOfDay } from "date-fns";
-import type { AppointmentStatus } from "@irene/supabase";
+import type { AppointmentStatus } from "@salon-app/supabase";
 
 const BUSINESS_START_HOUR = 9;
 

@@ -1,4 +1,4 @@
-import { createClient } from "@irene/supabase/browser";
+import { createClient } from "@salon-app/supabase/browser";
 import {
   upsertFichaIfNewer,
   pullFicha,

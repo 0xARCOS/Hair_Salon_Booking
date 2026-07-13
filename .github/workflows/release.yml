@@ -1,0 +1,51 @@
+name: Release
+
+# Dispara al empujar un tag vX.Y.Z. La app es una PWA instalable desde el
+# navegador — este Release NO trae un binario descargable (.exe/.apk); es la
+# nota de versión + instrucciones de instalación que se le reenvían a la
+# clienta. Configura la variable de repo AGENDA_URL (Settings → Secrets and
+# variables → Actions → Variables) con la URL desplegada de la agenda antes
+# de usar este workflow.
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci
+
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run build:agenda
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          body: |
+            ## Agenda ${{ github.ref_name }}
+
+            Esta versión ya está desplegada — no hay ningún archivo que
+            descargar aquí. Para instalar (o actualizar) la app:
+
+            1. Abre ${{ vars.AGENDA_URL }} en Chrome, Edge o Safari.
+            2. Inicia sesión con tu cuenta de staff.
+            3. En el menú del navegador, elige **"Instalar aplicación"**
+               (Android/escritorio) o **"Añadir a pantalla de inicio"**
+               (iPhone/iPad).
+
+            La app quedará instalada como cualquier programa del equipo, con
+            su propio icono y funcionando sin conexión para las fichas
+            locales ya guardadas.

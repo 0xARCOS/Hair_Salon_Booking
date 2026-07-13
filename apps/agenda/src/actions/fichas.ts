@@ -1,7 +1,7 @@
 "use server";
 
-import { createClient } from "@irene/supabase/server";
-import type { ClientFicha, ClientFoto, ClientFormulaEntry } from "@irene/supabase";
+import { createClient } from "@salon-app/supabase/server";
+import type { ClientFicha, ClientFoto, ClientFormulaEntry } from "@salon-app/supabase";
 
 // Espejo remoto de las fichas locales (ver apps/agenda/src/lib/local/db.ts y
 // sync.ts). Dexie sigue siendo la fuente de la verdad offline; estas

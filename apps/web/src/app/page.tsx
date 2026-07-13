@@ -1,6 +1,6 @@
-import { createClient } from "@irene/supabase/server";
+import { createClient } from "@salon-app/supabase/server";
 import { LandingClient } from "@/components/landing/LandingClient";
-import type { Service } from "@irene/supabase";
+import type { Service } from "@salon-app/supabase";
 
 export default async function HomePage() {
   let services: Service[] = [];

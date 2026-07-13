@@ -2,8 +2,9 @@ import { MonitorDown } from "lucide-react";
 import { BackupPanel } from "@/components/local/BackupPanel";
 import { EncryptionPanel } from "@/components/local/EncryptionPanel";
 import { InstallButton } from "@/components/local/InstallButton";
+import { brand } from "@/config/brand";
 
-export const metadata = { title: "Ajustes · Agenda Irene" };
+export const metadata = { title: `Ajustes · Agenda ${brand.shortName}` };
 
 export default function AjustesPage() {
   return (

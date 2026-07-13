@@ -1,5 +1,8 @@
 import { localDB, type FichaLocal } from "./db";
 import { encryptFicha, getSessionKey, isEncryptionEnabled } from "./crypto";
+import { brand } from "@/config/brand";
+
+const APP_ID = `agenda-${brand.slug}`;
 
 // Copia de seguridad de las fichas locales: un único archivo .json con las
 // fichas y las fotos en base64. Crítico porque los datos viven solo en este
@@ -22,7 +25,7 @@ interface BackupPhoto {
 }
 
 interface BackupFile {
-  app: "agenda-irene";
+  app: string;
   version: number;
   exportedAt: string;
   fichas: FichaLocal[];
@@ -60,7 +63,7 @@ export async function exportBackup(): Promise<void> {
   ]);
 
   const backup: BackupFile = {
-    app: "agenda-irene",
+    app: APP_ID,
     version: BACKUP_VERSION,
     exportedAt: new Date().toISOString(),
     crypto:
@@ -85,7 +88,7 @@ export async function exportBackup(): Promise<void> {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `fichas-irene-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = `fichas-${brand.slug}-${new Date().toISOString().slice(0, 10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
 
@@ -112,7 +115,7 @@ export interface ImportResult {
  */
 export async function importBackup(file: File): Promise<ImportResult> {
   const parsed = JSON.parse(await file.text()) as BackupFile;
-  if (parsed.app !== "agenda-irene" || !Array.isArray(parsed.fichas)) {
+  if (parsed.app !== APP_ID || !Array.isArray(parsed.fichas)) {
     throw new Error("El archivo no es una copia de seguridad de la agenda.");
   }
   if (parsed.version > BACKUP_VERSION) {

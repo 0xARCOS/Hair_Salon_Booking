@@ -16,6 +16,8 @@ const fontBody = Outfit({
   variable: "--font-body",
 });
 
+// TODO: nombre/descripción real de la clienta antes de publicar (ver
+// docs/TEMPLATE.md) — mismo criterio que los TODO en LandingClient.tsx.
 export const metadata: Metadata = {
   title: "Irene Rodríguez · Salón de Belleza Unisex · Guadalajara",
   description:

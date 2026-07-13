@@ -4,7 +4,10 @@
 
 @layer base {
   :root {
-    /* Tema claro/cálido del Salón Irene Rodríguez (coherente con la landing) */
+    /* Tema claro/cálido del Salón Irene Rodríguez (coherente con la landing).
+       Plantilla: este bloque es la fuente de los tokens de color de marca —
+       ver docs/DESIGN.md para el formato HSL y docs/TEMPLATE.md para el
+       checklist de reuso (mantener en sync con apps/agenda/src/app/globals.css). */
     --background: 33 70% 97%;      /* crema  #fdf9f4 */
     --foreground: 19 12% 26%;      /* texto  #4a3f3a */
 

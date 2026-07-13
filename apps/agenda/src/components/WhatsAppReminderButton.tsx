@@ -1,6 +1,7 @@
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { MessageCircle } from "lucide-react";
+import { brand } from "@/config/brand";
 
 interface WhatsAppReminderButtonProps {
   clientName: string;
@@ -21,7 +22,7 @@ export function WhatsAppReminderButton({
   const when = format(parseISO(startTime), "EEEE d 'de' MMMM 'a las' HH:mm", {
     locale: es,
   });
-  const message = `Hola ${clientName}, te recordamos tu cita en Irene Hair Salon el ${when}${
+  const message = `Hola ${clientName}, te recordamos tu cita en ${brand.fullName} el ${when}${
     serviceName ? ` para ${serviceName}` : ""
   }. ¡Te esperamos!`;
   const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;

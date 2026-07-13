@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@irene/supabase": "*",
+    "@salon-app/supabase": "*",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
     "dexie": "^4.4.4",

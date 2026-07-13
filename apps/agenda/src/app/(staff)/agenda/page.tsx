@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { createClient } from "@irene/supabase/server";
+import { createClient } from "@salon-app/supabase/server";
 import { format, parseISO, isToday } from "date-fns";
 import { es } from "date-fns/locale";
 import { TrendingUp, Calendar, Clock, Scissors, Plus } from "lucide-react";
 import { AppointmentStatusSelect } from "@/components/admin/AppointmentStatusSelect";
 import { AddServiceForm } from "@/components/admin/AddServiceForm";
 import { WhatsAppReminderButton } from "@/components/WhatsAppReminderButton";
-import type { Appointment, AppointmentStatus, Service } from "@irene/supabase";
+import type { Appointment, AppointmentStatus, Service } from "@salon-app/supabase";
 
 type AppointmentRow = Omit<Appointment, "services" | "clients"> & {
   services: { name: string; price: number; duration_mins: number } | null;

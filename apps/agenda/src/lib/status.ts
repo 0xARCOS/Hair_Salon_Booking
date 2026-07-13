@@ -1,4 +1,4 @@
-import type { AppointmentStatus } from "@irene/supabase";
+import type { AppointmentStatus } from "@salon-app/supabase";
 
 export const STATUS_META: Record<
   AppointmentStatus,

@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 import { Loader2 } from "lucide-react";
 import { createAppointmentForClient, type AppointmentState } from "@/actions/booking";
-import type { Client, Service } from "@irene/supabase";
+import type { Client, Service } from "@salon-app/supabase";
 
 const initialState: AppointmentState = { error: null };
 
