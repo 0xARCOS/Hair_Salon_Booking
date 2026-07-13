@@ -19,6 +19,9 @@
     "typecheck": {
       "dependsOn": ["^build"],
       "outputs": []
+    },
+    "test": {
+      "outputs": []
     }
   }
 }
