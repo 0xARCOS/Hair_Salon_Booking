@@ -400,6 +400,8 @@ export function LandingClient({ services }: LandingClientProps) {
           </nav>
           <p className="footer-legal">
             © {new Date().getFullYear()} Salón de Belleza Unisex Irene Rodríguez · Guadalajara
+            {" · "}
+            <a href="/privacidad">Aviso de privacidad</a>
           </p>
         </div>
       </footer>
