@@ -62,7 +62,8 @@ Implicaciones:
 - **Fotos**: se comprimen en el cliente (~1280 px, JPEG) antes de guardarse
   como `Blob`.
 - **Cifrado opcional** (Ajustes → «Cifrado de las fichas locales»): los campos
-  sensibles (alergias, preferencias, notas y fórmulas — las fotos no) se
+  sensibles (alergias, preferencias, notas, fórmulas y fotos — los pies de
+  foto no) se
   cifran con AES-GCM y una clave derivada de una frase de paso (PBKDF2,
   600k iteraciones). La clave vive solo en memoria durante la sesión y nunca
   sale del dispositivo; las copias de seguridad exportadas viajan cifradas y

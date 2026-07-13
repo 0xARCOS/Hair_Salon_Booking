@@ -39,7 +39,8 @@ export function EncryptionPanel() {
         (alergias, preferencias, notas, fórmulas y fotos). La clave se deriva
         en este dispositivo y nunca sale de él: sin la frase, ni siquiera
         quien tenga acceso al equipo, a una copia exportada, o al servidor
-        donde se sincronizan, puede leer esos campos ni ver las fotos.
+        donde se sincronizan, puede leer esos campos ni ver las fotos. Los
+        pies de foto y los datos de contacto de la clienta no se cifran.
       </p>
 
       <p className="text-sm bg-status-pending/10 text-status-pending rounded-md px-3 py-2 flex items-start gap-2 max-w-prose">
