@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClient } from "@irene/supabase/server";
+import { createClient } from "@salon-app/supabase/server";
 
 export type ClientFormState = { error: string | null };
 

@@ -1,4 +1,5 @@
 import Dexie, { type Table } from "dexie";
+import { brand } from "@/config/brand";
 
 // Ficha local — datos ricos de cliente que viven SOLO en este dispositivo
 // (IndexedDB). Supabase sigue siendo la fuente de verdad para identidad,
@@ -56,7 +57,7 @@ class AgendaLocalDB extends Dexie {
   meta!: Table<MetaEntry, string>;
 
   constructor() {
-    super("agenda-irene-local");
+    super(`agenda-${brand.slug}-local`);
     this.version(1).stores({
       fichas: "clientId, updatedAt",
       fotos: "++id, clientId, createdAt",

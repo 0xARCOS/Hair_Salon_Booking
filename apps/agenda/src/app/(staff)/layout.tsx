@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Scissors, CalendarDays, Users, Settings, LogOut } from "lucide-react";
-import { createClient } from "@irene/supabase/server";
+import { createClient } from "@salon-app/supabase/server";
 import { logout } from "@/actions/auth";
 import { BackupReminder } from "@/components/local/BackupReminder";
+import { brand } from "@/config/brand";
 
 export default async function StaffLayout({
   children,
@@ -24,9 +25,7 @@ export default async function StaffLayout({
           <div className="flex items-center gap-4">
             <Link href="/agenda" className="flex items-center gap-2 font-bold">
               <Scissors className="w-4 h-4 text-primary" />
-              <span className="text-sm">
-                Irene <span className="text-primary">Hair</span>
-              </span>
+              <span className="text-sm">{brand.shortName}</span>
             </Link>
             <div className="w-px h-4 bg-border" />
             <nav className="flex items-center gap-3 text-sm">

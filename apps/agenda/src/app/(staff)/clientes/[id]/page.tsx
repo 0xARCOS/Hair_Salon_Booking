@@ -1,14 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Plus } from "lucide-react";
-import { createClient } from "@irene/supabase/server";
+import { createClient } from "@salon-app/supabase/server";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { ClientForm } from "@/components/ClientForm";
 import { WhatsAppReminderButton } from "@/components/WhatsAppReminderButton";
 import { StatusBadge } from "@/components/StatusBadge";
 import { FichaLocal } from "@/components/local/FichaLocal";
-import type { Appointment, AppointmentStatus, Client } from "@irene/supabase";
+import type { Appointment, AppointmentStatus, Client } from "@salon-app/supabase";
 
 type AppointmentRow = Omit<Appointment, "services"> & {
   services: { name: string; price: number } | null;

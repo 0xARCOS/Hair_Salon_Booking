@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import { createClient } from "@irene/supabase/server";
+import { createClient } from "@salon-app/supabase/server";
 import { ClientSearchList } from "@/components/ClientSearchList";
 
 export default async function ClientesPage() {

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Search } from "lucide-react";
-import type { Client } from "@irene/supabase";
+import type { Client } from "@salon-app/supabase";
 
 interface ClientSearchListProps {
   clients: Pick<Client, "id" | "full_name" | "phone" | "active_treatment_phase">[];

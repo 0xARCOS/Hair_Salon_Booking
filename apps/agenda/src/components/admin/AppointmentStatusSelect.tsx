@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { updateAppointmentStatus } from "@/actions/booking";
-import type { AppointmentStatus } from "@irene/supabase";
+import type { AppointmentStatus } from "@salon-app/supabase";
 import { STATUS_META } from "@/lib/status";
 
 export function AppointmentStatusSelect({

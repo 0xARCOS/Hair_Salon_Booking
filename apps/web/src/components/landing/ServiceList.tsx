@@ -1,4 +1,4 @@
-import type { Service } from "@irene/supabase";
+import type { Service } from "@salon-app/supabase";
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat("es-MX", {

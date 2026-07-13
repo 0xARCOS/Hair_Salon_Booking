@@ -1,12 +1,11 @@
 import type { MetadataRoute } from "next";
+import { brand } from "@/config/brand";
 
-// El icono es SVG (válido para instalación en Chrome/Edge). TODO opcional:
-// añadir versiones PNG 192/512 para máxima compatibilidad (Safari iOS).
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Agenda · Irene Hair Salon",
-    short_name: "Agenda Irene",
-    description: "Agenda privada de citas y fichas de clientas.",
+    name: `Agenda · ${brand.fullName}`,
+    short_name: `Agenda ${brand.shortName}`,
+    description: brand.description,
     start_url: "/agenda",
     display: "standalone",
     background_color: "#fdf9f4",
@@ -23,6 +22,18 @@ export default function manifest(): MetadataRoute.Manifest {
         sizes: "any",
         type: "image/svg+xml",
         purpose: "maskable",
+      },
+      {
+        src: "/icons/icon-192.png",
+        sizes: "192x192",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/icons/icon-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "any",
       },
     ],
   };

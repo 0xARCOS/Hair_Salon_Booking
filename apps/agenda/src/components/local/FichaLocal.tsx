@@ -323,7 +323,7 @@ function NotasTab({
           rows={2}
           defaultValue={ficha.preferencias}
           onChange={(e) => onChange({ preferencias: e.target.value })}
-          placeholder="Ej. café solo, prefiere silencio, siempre con Irene…"
+          placeholder="Ej. café solo, prefiere silencio, siempre con la misma estilista…"
           className={inputClass}
         />
       </div>

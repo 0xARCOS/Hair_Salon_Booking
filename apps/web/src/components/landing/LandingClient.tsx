@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 import { useEffect } from "react";
-import type { Service } from "@irene/supabase";
+import type { Service } from "@salon-app/supabase";
 import { ServiceList } from "@/components/landing/ServiceList";
 import "@/app/landing.css";
 

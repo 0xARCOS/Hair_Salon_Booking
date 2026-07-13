@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Outfit } from "next/font/google";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
+import { brand } from "@/config/brand";
 import "./globals.css";
 
 // Misma pareja tipográfica que la web pública (ver docs/DESIGN.md).
@@ -17,13 +18,13 @@ const fontDisplay = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: "Agenda · Irene Hair Salon",
-  description: "Agenda privada de citas y fichas de clientas — Irene Hair Salon.",
+  title: `Agenda · ${brand.fullName}`,
+  description: `${brand.description} — ${brand.fullName}.`,
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Agenda Irene",
+    title: `Agenda ${brand.shortName}`,
   },
 };
 

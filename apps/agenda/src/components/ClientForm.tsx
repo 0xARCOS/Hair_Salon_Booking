@@ -7,7 +7,7 @@ import {
   updateClientRecord,
   type ClientFormState,
 } from "@/actions/clients";
-import type { Client } from "@irene/supabase";
+import type { Client } from "@salon-app/supabase";
 
 const initialState: ClientFormState = { error: null };
 

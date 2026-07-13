@@ -1,4 +1,4 @@
-import { createClient } from "@irene/supabase/server";
+import { createClient } from "@salon-app/supabase/server";
 import { NewAppointmentForm } from "@/components/NewAppointmentForm";
 
 export default async function NewAppointmentPage({
