@@ -56,7 +56,12 @@ BEGIN
     SET total_spent = total_spent + COALESCE(v_price, 0), updated_at = NOW()
     WHERE id = v_client_id;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- SECURITY DEFINER salta el RLS, así que el acceso se controla con GRANT/
+-- REVOKE: Postgres da EXECUTE a PUBLIC por defecto en toda función nueva y
+-- hay que retirarlo explícitamente para que anon no pueda llamarla.
+REVOKE EXECUTE ON FUNCTION public.complete_appointment(UUID) FROM PUBLIC, anon;
 
 -- 5. Row Level Security
 --    No hay tabla de roles: cualquier cuenta de auth.users es staff de la
@@ -148,7 +153,12 @@ BEGIN
         updated_at = EXCLUDED.updated_at
     WHERE public.client_fichas.updated_at < EXCLUDED.updated_at;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- Igual que complete_appointment: sin este REVOKE, anon podría ejecutar la
+-- RPC (EXECUTE a PUBLIC por defecto) y, siendo SECURITY DEFINER, escribir
+-- fichas saltándose el RLS con solo conocer un client_id.
+REVOKE EXECUTE ON FUNCTION public.upsert_ficha_if_newer(UUID, TEXT, TEXT, TEXT, JSONB, TEXT, TIMESTAMPTZ) FROM PUBLIC, anon;
 
 -- Bucket privado para las fotos de ficha. Nunca se sirve con getPublicUrl:
 -- siempre se sube/baja con el cliente autenticado y se cachea localmente.

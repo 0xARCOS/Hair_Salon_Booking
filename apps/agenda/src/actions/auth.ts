@@ -9,6 +9,11 @@ export type AuthState = { error: string | null };
 export type RequestResetState = { error: string | null; sent: boolean };
 
 async function getOrigin() {
+  // El Host lo controla quien hace la petición: si está definida, manda la
+  // URL canónica del deploy y el header solo queda como fallback de dev.
+  // (Supabase además valida redirectTo contra su allowlist de Redirect URLs.)
+  const canonical = process.env.NEXT_PUBLIC_SITE_URL;
+  if (canonical) return canonical.replace(/\/$/, "");
   const h = await headers();
   const host = h.get("host");
   const proto = h.get("x-forwarded-proto") ?? "https";

@@ -1,9 +1,10 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { localDB, type FichaLocal, type FotoLocal, type FormulaEntry } from "./db";
 import { pullCryptoSettings, pushCryptoSettings, deleteCryptoSettings } from "@/actions/fichas";
+import { queueFotoDeletions, syncAll } from "./sync";
 
-// Cifrado opcional de los campos sensibles de las fichas locales
-// (alergias, preferencias, notas y fórmulas — las fotos NO se cifran).
+// Cifrado opcional de las fichas locales: los campos sensibles de texto
+// (alergias, preferencias, notas y fórmulas) y los bytes de las fotos.
 //
 // - AES-GCM 256 con clave derivada de una frase de paso vía PBKDF2
 //   (600k iteraciones, SHA-256). La clave vive solo en memoria mientras
@@ -217,9 +218,35 @@ async function decryptFotosSequential(fotos: FotoLocal[], key: CryptoKey): Promi
   return out;
 }
 
+/** Lo ya sincronizado en claro (o cifrado, al desactivar) no puede quedarse
+    así en el servidor: se re-marca todo como pendiente — updatedAt nuevo para
+    que el push last-write-wins reemplace la fila remota, y las fotos pierden
+    su remoteId (se re-suben) mientras el objeto viejo de Storage se encola
+    para borrado. */
+function markFichasPending(fichas: FichaLocal[], now: number): FichaLocal[] {
+  return fichas.map((f) => ({ ...f, updatedAt: now, syncedAt: undefined }));
+}
+
+function stripRemoteIds(fotos: FotoLocal[]): {
+  fotos: FotoLocal[];
+  oldRemote: { clientId: string; remoteId: string }[];
+} {
+  const oldRemote = fotos
+    .filter((f): f is FotoLocal & { remoteId: string } => !!f.remoteId)
+    .map((f) => ({ clientId: f.clientId, remoteId: f.remoteId }));
+  return { fotos: fotos.map((f) => ({ ...f, remoteId: undefined })), oldRemote };
+}
+
+/** Dispara un barrido de sync por cada clienta afectada (best-effort). */
+function resyncClients(fichas: FichaLocal[], fotos: FotoLocal[]): Promise<void> {
+  const clientIds = new Set([...fichas.map((f) => f.clientId), ...fotos.map((f) => f.clientId)]);
+  return Promise.all([...clientIds].map((id) => syncAll(id).catch(() => {}))).then(() => {});
+}
+
 /** Activa el cifrado: crea salt+keyCheck y cifra todas las fichas y fotos
-    existentes. Las fotos ya subidas a Storage en claro requieren
-    re-subirse — sync.ts las detecta como pendientes al cambiar `enc`. */
+    existentes. Las copias remotas subidas en claro se invalidan: las fichas
+    se re-suben con updatedAt nuevo y las fotos se re-suben cifradas mientras
+    el objeto en claro de Storage se encola para borrado. */
 export async function enableEncryption(passphrase: string): Promise<void> {
   if (await isEncryptionEnabled()) throw new Error("El cifrado ya está activado.");
   const salt = crypto.getRandomValues(new Uint8Array(16));
@@ -228,13 +255,17 @@ export async function enableEncryption(passphrase: string): Promise<void> {
 
   // WebCrypto no puede esperar dentro de una transacción Dexie: se cifra
   // en memoria y se escribe todo junto después.
+  const now = Date.now();
   const [fichas, fotos] = await Promise.all([localDB.fichas.toArray(), localDB.fotos.toArray()]);
-  const encryptedFichas = await Promise.all(
-    fichas.filter((f) => !f.enc).map((f) => encryptFicha(f, key))
+  const encryptedFichas = markFichasPending(
+    await Promise.all(fichas.filter((f) => !f.enc).map((f) => encryptFicha(f, key))),
+    now
   );
-  const encryptedFotos = await encryptFotosSequential(
-    fotos.filter((f) => !f.enc),
-    key
+  const { fotos: encryptedFotos, oldRemote } = stripRemoteIds(
+    await encryptFotosSequential(
+      fotos.filter((f) => !f.enc),
+      key
+    )
   );
 
   await localDB.transaction("rw", localDB.fichas, localDB.fotos, localDB.meta, async () => {
@@ -245,6 +276,7 @@ export async function enableEncryption(passphrase: string): Promise<void> {
       { key: META_CHECK, value: keyCheck },
     ]);
   });
+  await queueFotoDeletions(oldRemote);
 
   sessionKey = key;
   notify();
@@ -253,20 +285,27 @@ export async function enableEncryption(passphrase: string): Promise<void> {
   // quedan solo locales por ahora y este dispositivo sigue funcionando;
   // otro dispositivo simplemente no podrá desbloquear hasta que se reintente.
   await pushCryptoSettings({ salt: toB64(salt), keyCheck }).catch(() => {});
+  await resyncClients(encryptedFichas, encryptedFotos);
 }
 
-/** Desactiva el cifrado: descifra todas las fichas y fotos, elimina salt+keyCheck. */
+/** Desactiva el cifrado: descifra todas las fichas y fotos, elimina
+    salt+keyCheck y — simétrico a enableEncryption — invalida las copias
+    remotas cifradas para que se re-suban en claro. */
 export async function disableEncryption(passphrase: string): Promise<void> {
   if (!(await unlock(passphrase))) throw new Error("Frase de paso incorrecta.");
   const key = sessionKey!;
 
+  const now = Date.now();
   const [fichas, fotos] = await Promise.all([localDB.fichas.toArray(), localDB.fotos.toArray()]);
-  const decryptedFichas = await Promise.all(
-    fichas.filter((f) => f.enc).map((f) => decryptFicha(f, key))
+  const decryptedFichas = markFichasPending(
+    await Promise.all(fichas.filter((f) => f.enc).map((f) => decryptFicha(f, key))),
+    now
   );
-  const decryptedFotos = await decryptFotosSequential(
-    fotos.filter((f) => f.enc),
-    key
+  const { fotos: decryptedFotos, oldRemote } = stripRemoteIds(
+    await decryptFotosSequential(
+      fotos.filter((f) => f.enc),
+      key
+    )
   );
 
   await localDB.transaction("rw", localDB.fichas, localDB.fotos, localDB.meta, async () => {
@@ -274,11 +313,13 @@ export async function disableEncryption(passphrase: string): Promise<void> {
     await localDB.fotos.bulkPut(decryptedFotos);
     await localDB.meta.bulkDelete([META_SALT, META_CHECK]);
   });
+  await queueFotoDeletions(oldRemote);
 
   sessionKey = null;
   notify();
 
   await deleteCryptoSettings().catch(() => {});
+  await resyncClients(decryptedFichas, decryptedFotos);
 }
 
 /* ─── Hook de estado para componentes ────────────────────────────────── */

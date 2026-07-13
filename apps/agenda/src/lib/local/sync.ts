@@ -105,6 +105,20 @@ export async function requestFotoDeletion(clientId: string, remoteId: string): P
   }
 }
 
+/** Encola borrados remotos sin intentarlos ya — usado por crypto.ts al
+    (des)activar el cifrado: los objetos subidos con el estado anterior deben
+    eliminarse de Storage y re-subirse re-cifrados/descifrados. */
+export async function queueFotoDeletions(
+  items: { clientId: string; remoteId: string }[]
+): Promise<void> {
+  if (items.length === 0) return;
+  const pending = await pendingFotoDeletes();
+  for (const item of items) {
+    if (!pending.some((p) => p.remoteId === item.remoteId)) pending.push(item);
+  }
+  await setPendingFotoDeletes(pending);
+}
+
 async function flushPendingFotoDeletes(clientId: string): Promise<void> {
   const pending = await pendingFotoDeletes();
   const mine = pending.filter((p) => p.clientId === clientId);

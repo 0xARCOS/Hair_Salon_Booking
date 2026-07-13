@@ -68,9 +68,11 @@ export function FichaLocal({ clientId }: { clientId: string }) {
   const loadFicha = useCallback(async (): Promise<void> => {
     const stored = await localDB.fichas.get(clientId);
     const { enabled, key } = cryptoRef.current;
-    // Con cifrado activado hace falta la clave tanto para leer fichas
-    // cifradas como para crear nuevas (se guardarían cifradas).
-    if (enabled && !key && (stored?.enc || !stored)) {
+    // Con el cifrado activado, sin clave no se abre NINGUNA ficha — tampoco
+    // una guardada aún en claro (p. ej. en un segundo dispositivo que
+    // sincronizó antes de activarse el cifrado): editarla sin clave la
+    // volvería a subir en claro pisando la copia remota cifrada.
+    if (enabled && !key) {
       setLocked(true);
       return;
     }

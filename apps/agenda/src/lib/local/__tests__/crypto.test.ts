@@ -8,6 +8,14 @@ vi.mock("@/actions/fichas", () => ({
   deleteCryptoSettings: vi.fn(async () => {}),
 }));
 
+// crypto.ts usa sync.ts para invalidar las copias remotas al (des)activar;
+// aquí solo verificamos que lo pide — la lógica de sync tiene su propio test.
+vi.mock("../sync", () => ({
+  queueFotoDeletions: vi.fn(async () => {}),
+  syncAll: vi.fn(async () => {}),
+}));
+
+import { queueFotoDeletions, syncAll } from "../sync";
 import {
   enableEncryption,
   disableEncryption,
@@ -20,7 +28,7 @@ import {
   encryptBlob,
   decryptBlob,
 } from "../crypto";
-import { localDB, emptyFicha, type FichaLocal } from "../db";
+import { localDB, emptyFicha, type FichaLocal, type FotoLocal } from "../db";
 
 const PASSPHRASE = "frase-de-paso-correcta";
 
@@ -51,7 +59,18 @@ describe("cifrado de fichas locales", () => {
   });
 
   it("enableEncryption cifra las fichas existentes y deja la sesión desbloqueada", async () => {
-    await localDB.fichas.put(fichaDePrueba());
+    // Ficha y foto ya sincronizadas en claro: al activar el cifrado deben
+    // quedar pendientes de re-subir para no dejar copias en claro remotas.
+    await localDB.fichas.put({ ...fichaDePrueba(), syncedAt: Date.now() });
+    await localDB.fotos.add({
+      clientId: "11111111-1111-1111-1111-111111111111",
+      blob: new Blob([new Uint8Array([1, 2, 3])]),
+      caption: "",
+      createdAt: 1_000,
+      mimeType: "image/jpeg",
+      enc: false,
+      remoteId: "foto-en-claro",
+    } satisfies FotoLocal);
 
     await enableEncryption(PASSPHRASE);
 
@@ -67,6 +86,22 @@ describe("cifrado de fichas locales", () => {
     expect(stored!.formulas).toEqual([]);
     expect(stored!.enc).toMatch(/^v1:/);
     expect(stored!.enc).not.toContain("PPD");
+  });
+
+  it("activar el cifrado invalida las copias remotas subidas en claro", async () => {
+    // La ficha vuelve a estar pendiente de push (la remota en claro se pisará).
+    const stored = await localDB.fichas.get("11111111-1111-1111-1111-111111111111");
+    expect(stored!.syncedAt).toBeUndefined();
+
+    // La foto pierde su remoteId (se re-sube cifrada) y el objeto en claro
+    // de Storage queda encolado para borrado.
+    const [foto] = await localDB.fotos.toArray();
+    expect(foto.enc).toBe(true);
+    expect(foto.remoteId).toBeUndefined();
+    expect(queueFotoDeletions).toHaveBeenCalledWith([
+      { clientId: "11111111-1111-1111-1111-111111111111", remoteId: "foto-en-claro" },
+    ]);
+    expect(syncAll).toHaveBeenCalledWith("11111111-1111-1111-1111-111111111111");
   });
 
   it("decryptFicha devuelve exactamente los campos originales (round-trip)", async () => {
@@ -138,5 +173,8 @@ describe("cifrado de fichas locales", () => {
     expect(stored!.enc).toBeUndefined();
     expect(stored!.alergias).toBe("PPD — patch test obligatorio");
     expect(stored!.formulas).toHaveLength(1);
+    // Simétrico a enable: lo descifrado queda pendiente de re-subir para que
+    // la copia remota no se quede cifrada con una clave ya descartada.
+    expect(stored!.syncedAt).toBeUndefined();
   });
 });
