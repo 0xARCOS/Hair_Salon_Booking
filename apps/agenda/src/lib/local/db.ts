@@ -23,14 +23,26 @@ export interface FichaLocal {
   /** Si el cifrado está activo: campos sensibles cifrados (AES-GCM, ver
       crypto.ts). Cuando está presente, los campos de texto van vacíos. */
   enc?: string;
+  /** Última vez que esta versión (por updatedAt) se subió a Supabase.
+      Ausente o < updatedAt = pendiente de subir. Ver lib/local/sync.ts. */
+  syncedAt?: number;
 }
 
 export interface FotoLocal {
   id?: number; // autoincrement
   clientId: string;
-  blob: Blob; // comprimida antes de guardar (ver image.ts)
+  blob: Blob; // comprimida antes de guardar (ver image.ts); ciphertext si enc
   caption: string;
   createdAt: number;
+  /** Tipo original de la imagen (compressImage siempre da 'image/jpeg').
+      Necesario para reconstruir el Blob al descifrar, ya que blob.type deja
+      de ser fiable una vez cifrado. */
+  mimeType: string;
+  /** Si true, `blob` son bytes cifrados (ver crypto.ts encryptBlob). */
+  enc: boolean;
+  /** id de la fila en client_fotos una vez subida. Ausente = pendiente de
+      subir. Ver lib/local/sync.ts. */
+  remoteId?: string;
 }
 
 export interface MetaEntry {

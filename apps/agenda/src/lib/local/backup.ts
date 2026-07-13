@@ -12,8 +12,13 @@ interface BackupPhoto {
   clientId: string;
   caption: string;
   createdAt: number;
-  type: string;
+  type: string; // tipo real del Blob (application/octet-stream si enc)
   dataBase64: string;
+  /** Tipo de imagen original — ver FotoLocal.mimeType. Ausente en copias
+      antiguas (previas a la sincronización), donde equivale a `type`. */
+  mimeType?: string;
+  /** Ausente en copias antiguas — nunca hubo fotos cifradas antes. */
+  enc?: boolean;
 }
 
 interface BackupFile {
@@ -70,6 +75,8 @@ export async function exportBackup(): Promise<void> {
         createdAt: f.createdAt,
         type: f.blob.type || "image/jpeg",
         dataBase64: await blobToBase64(f.blob),
+        mimeType: f.mimeType,
+        enc: f.enc,
       }))
     ),
   };
@@ -158,6 +165,8 @@ export async function importBackup(file: File): Promise<ImportResult> {
           caption: foto.caption,
           createdAt: foto.createdAt,
           blob: base64ToBlob(foto.dataBase64, foto.type),
+          mimeType: foto.mimeType ?? foto.type,
+          enc: foto.enc ?? false,
         });
         fotosAdded++;
       }
