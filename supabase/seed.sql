@@ -1,7 +1,7 @@
 -- Servicios iniciales del Salón Irene Rodríguez (Guadalajara, México).
 -- Precios en MXN, orientativos: ajústalos a las tarifas reales del salón
 -- desde la agenda o editando este archivo.
--- Ejecuta este seed UNA vez tras aplicar schema.sql.
+-- Ejecuta este seed UNA vez tras aplicar las migraciones de migrations/.
 
 INSERT INTO public.services (name, price, duration_mins, is_multi_session) VALUES
   ('Corte de cabello',        280.00,  45, FALSE),

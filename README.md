@@ -35,7 +35,8 @@ npm run dev:agenda   # http://localhost:3000 (puerto distinto si corres ambas a 
 
 ## Base de datos
 
-1. En el SQL Editor de Supabase, ejecuta `supabase/schema.sql` (crea `services`,
+1. En el SQL Editor de Supabase, ejecuta en orden los archivos de
+   `supabase/migrations/` (ver `supabase/README.md`; crean `services`,
    `clients`, `appointments`, RLS y la función `complete_appointment`).
 2. Ejecuta `supabase/seed.sql` para cargar servicios de ejemplo.
 3. Crea manualmente en **Authentication** las cuentas del staff que usarán

@@ -14,9 +14,8 @@ archivos editados, no una reescritura desde cero. Checklist, en orden:
 ## 2. Supabase
 
 - Crear un proyecto nuevo en Supabase.
-- Aplicar `supabase/schema.sql` en el editor SQL del dashboard (no hay
-  carpeta de migraciones; este archivo es la fuente de verdad aplicada a
-  mano).
+- Aplicar en orden los archivos de `supabase/migrations/` en el editor SQL
+  del dashboard (o `supabase db push` con el CLI). Ver `supabase/README.md`.
 - Editar `supabase/seed.sql` con los servicios y precios reales de la
   clienta, y ejecutarlo.
 - Crear la primera cuenta de staff (Authentication → Users).
